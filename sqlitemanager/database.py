@@ -883,7 +883,7 @@ class Record(object):
         self.recorddict = {}
         for index, name in enumerate(self.table.column_names[1:]):
             self.recorddict.update({name: self.recordarray[1:][index]})
-        print(f"set recorddict {self.recorddict}")
+        # print(f"set recorddict {self.recorddict}")
 
 def print_records(records):
     for record in records:
