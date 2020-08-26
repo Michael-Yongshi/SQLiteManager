@@ -857,6 +857,7 @@ class Record(object):
         self.values = recordarray[1:]
         self.setrecordpairs()
         self.setvaluepairs()
+        self.setrecorddict()
 
     def setrecordpairs(self):
         self.recordpairs = []
@@ -878,6 +879,11 @@ class Record(object):
             self.valuepairs += [valuepair]
         # print(f"set valuepairs {self.valuepairs}")
 
+    def setrecorddict(self):
+        self.recorddict = {}
+        for index, name in enumerate(self.table.column_names[1:]):
+            self.recorddict.update({name: self.recordarray[1:][index]})
+        print(f"set recorddict {self.recorddict}")
 
 def print_records(records):
     for record in records:
@@ -887,120 +893,120 @@ if __name__ == "__main__":
 
     split_complete_path(complete_path = "c:\\users\\documents\\file.txt\\")
 
-    # filename = "backup"
+    filename = "backup"
 
-    # db = Database(path="", filename=filename)
-    # db.delete_database()
-    # print(f"deleted database {filename}")
+    db = Database(path="", filename=filename)
+    db.delete_database()
+    print(f"deleted database {filename}")
 
-    # filename = "science"
+    filename = "science"
 
-    # db = Database(path="", filename=filename)
-    # db.delete_database()
-    # print(f"deleted database {filename}")
+    db = Database(path="", filename=filename)
+    db.delete_database()
+    print(f"deleted database {filename}")
 
-    # db = Database(filename=filename)
+    db = Database(filename=filename)
 
-    # sciencetbl = db.create_table(
-    #     name="scientists",
-    #     column_names = ["ordering", "name", "age", "nobelprizewinner"],
-    #     column_types = ["INTEGER", "Text", "Integer", "Bool"],
-    # )
-    # print(f"read table names: {db.read_table_names()}")
+    sciencetbl = db.create_table(
+        name="scientists",
+        column_names = ["ordering", "name", "age", "nobelprizewinner"],
+        column_types = ["INTEGER", "Text", "Integer", "Bool"],
+    )
+    print(f"read table names: {db.read_table_names()}")
 
-    # values = [
-    #     [1, "Hawking", 68, True],
-    #     [2, "Edison's child said \"Apple!\"", 20, True],
-    # ]
-    # records = sciencetbl.createRecords(values)
-    # print(f"creating initial records")
-    # print_records(records)
+    values = [
+        [1, "Hawking", 68, True],
+        [2, "Edison's child said \"Apple!\"", 20, True],
+    ]
+    records = sciencetbl.createRecords(values)
+    print(f"creating initial records")
+    print_records(records)
     
-    # #test functions of table
-    # print(f"read column names: {db.read_column_names(sciencetbl.name)}")
-    # print(f"read column types: {db.read_column_types(sciencetbl.name)}")
-    # print(f"read column metadata: {db.read_column_metadata(sciencetbl.name)}")
+    #test functions of table
+    print(f"read column names: {db.read_column_names(sciencetbl.name)}")
+    print(f"read column types: {db.read_column_types(sciencetbl.name)}")
+    print(f"read column metadata: {db.read_column_metadata(sciencetbl.name)}")
 
-    # values = [3, "Einstein", 100, False]
-    # record = sciencetbl.createRecord(values)
-    # print(f"create single record")
-    # print_records([record])
+    values = [3, "Einstein", 100, False]
+    record = sciencetbl.createRecord(values)
+    print(f"create single record")
+    print_records([record])
 
-    # values = [
-    #     [4, "Rosenburg", 78, False],
-    #     [5, "Neil dGrasse Tyson", 57, True],
-    # ]
-    # records = sciencetbl.createRecords(values)
-    # print(f"create multiple records")
+    values = [
+        [4, "Rosenburg", 78, False],
+        [5, "Neil dGrasse Tyson", 57, True],
+    ]
+    records = sciencetbl.createRecords(values)
+    print(f"create multiple records")
+    print_records(records)
+
+    # columns = ["name", "age"]
+    # records = sciencetbl.readRecords(columns=columns)
+    # print(f"read only name and age columns for all records")
     # print_records(records)
 
-    # # columns = ["name", "age"]
-    # # records = sciencetbl.readRecords(columns=columns)
-    # # print(f"read only name and age columns for all records")
-    # # print_records(records)
+    where = [["nobelprizewinner", [True]]]
+    records = sciencetbl.readRecords(where=where)
+    print(f"read where")
+    print_records(records)
 
-    # where = [["nobelprizewinner", [True]]]
-    # records = sciencetbl.readRecords(where=where)
-    # print(f"read where")
-    # print_records(records)
+    valuepairs = [["nobelprizewinner", False]]
+    where = [["nobelprizewinner", [True]], ["name", ["Hawking"]]]
+    records = sciencetbl.updateRecords(valuepairs=valuepairs, where=where)
+    print(f"update true to false")
+    print_records(records)
 
-    # valuepairs = [["nobelprizewinner", False]]
-    # where = [["nobelprizewinner", [True]], ["name", ["Hawking"]]]
-    # records = sciencetbl.updateRecords(valuepairs=valuepairs, where=where)
-    # print(f"update true to false")
-    # print_records(records)
+    valuepairs = [["name", "Neil de'Grasse Tyson"], ["age", 40]]
+    rowid = 5
+    record = sciencetbl.updateRecordbyID(valuepairs = valuepairs, rowid=rowid)
+    print(f"update record 'id = 5'")
+    print_records([record])
 
-    # valuepairs = [["name", "Neil de'Grasse Tyson"], ["age", 40]]
-    # rowid = 5
-    # record = sciencetbl.updateRecordbyID(valuepairs = valuepairs, rowid=rowid)
-    # print(f"update record 'id = 5'")
-    # print_records([record])
+    records = sciencetbl.readRecords()
+    print(f"read all records")
+    print_records(records)
 
-    # records = sciencetbl.readRecords()
-    # print(f"read all records")
-    # print_records(records)
+    reltbl = db.create_table(
+        name = "relationships",
+        column_names=["charid1", "charid2", "description"],
+        column_types=["INTEGER REFERENCES scientists(id)", "INTEGER REFERENCES scientists(id)", "TEXT"],
+    )
 
-    # reltbl = db.create_table(
-    #     name = "relationships",
-    #     column_names=["charid1", "charid2", "description"],
-    #     column_types=["INTEGER REFERENCES scientists(id)", "INTEGER REFERENCES scientists(id)", "TEXT"],
-    # )
+    reltbl.db.read_column_metadata(reltbl.name)
 
-    # reltbl.db.read_column_metadata(reltbl.name)
+    values = [1, 2, "hawking and edison"]
+    record = reltbl.createRecord(values)
+    print(f"create single record")
+    print_records([record])
 
-    # values = [1, 2, "hawking and edison"]
-    # record = reltbl.createRecord(values)
-    # print(f"create single record")
-    # print_records([record])
+    records = reltbl.readRecords()
+    print(f"read all records")
+    print_records(records)
 
-    # records = reltbl.readRecords()
-    # print(f"read all records")
-    # print_records(records)
+    records = reltbl.readForeignValues('charid1')
 
-    # records = reltbl.readForeignValues('charid1')
+    db.saveas_database(filename="backup")
+    db.close_database()
 
-    # db.saveas_database(filename="backup")
-    # db.close_database()
+    filename = "science"
 
-    # filename = "science"
+    db = Database(filename=filename)
 
-    # db = Database(filename=filename)
+    teachertbl = db.create_table(
+        name="teachers",
+        column_names = ["ordering", "name", "age", "active"],
+        column_types = ["INTEGER", "Text", "Integer", "Bool"],
+    )
 
-    # teachertbl = db.create_table(
-    #     name="teachers",
-    #     column_names = ["ordering", "name", "age", "active"],
-    #     column_types = ["INTEGER", "Text", "Integer", "Bool"],
-    # )
+    db.delete_table(teachertbl)
 
-    # db.delete_table(teachertbl)
+    sciencetbl = db.get_table("scientists")
 
-    # sciencetbl = db.get_table("scientists")
+    where = [["nobelprizewinner", [True]]]
+    records = sciencetbl.readRecords(where=where)
 
-    # where = [["nobelprizewinner", [True]]]
-    # records = sciencetbl.readRecords(where=where)
+    sciencetbl.deleteRecords(records)
 
-    # sciencetbl.deleteRecords(records)
-
-    # for table in db.tables:
-    #     print(f"printing for table: {table.name}")
-    #     print_records(table.records)
+    for table in db.tables:
+        print(f"printing for table: {table.name}")
+        print_records(table.records)
