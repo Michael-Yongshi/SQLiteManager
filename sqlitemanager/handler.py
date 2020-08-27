@@ -114,6 +114,39 @@ class SQLiteHandler(object):
 
         return records
 
+    def crossref_create(self, tablename1, tablename2):
+
+        crossref_table = handler.database.create_table(
+            name = f"CROSSREF_{tablename1}_{tablename2}",
+            column_names=[f"{tablename1}_id", f"{tablename2}_id", "description"],
+            column_types=[f"INTEGER REFERENCES {tablename1}(id)", f"INTEGER REFERENCES {tablename2}(id)", "TEXT"],
+        )
+
+        return crossref_table
+
+    def crossref_get_all(self, table):
+        
+        crossreferences = []
+
+        for key in self.database.tables:
+            if ("CROSSREF" in key) and (table.name in key):
+                crossreferences += [key]
+
+        return crossreferences        
+
+    def crossref_get_one(self, tablename1, tablename2):
+
+        for key in self.database.tables:
+            if ("CROSSREF" in key) and (tablename1 in key) and (tablename2 in key):
+                crossreference = key
+                break
+
+        return crossreference 
+
+    def crossref_add_record(table1, table2, where1, where2):
+        
+
+
     def read_records(self, tablename, where=[]):
 
         records = self.table_read_records(
@@ -141,6 +174,14 @@ class SQLiteHandler(object):
         )
         print(f"created record with recordarray {record.recordarray}")
         return record
+
+    def records_create(self, table, recordsvalues):
+        
+        records = []
+        for values in recordsvalues:
+            records += [self.record_create(table, values)]
+
+        return records
 
     def get_table_max_row(self, table):
 
@@ -304,13 +345,51 @@ if __name__ == "__main__":
     print(f"read all records")
     print_records(records)
 
-    # reltbl = db.create_table(
-    #     name = "relationships",
-    #     column_names=["charid1", "charid2", "description"],
-    #     column_types=["INTEGER REFERENCES scientists(id)", "INTEGER REFERENCES scientists(id)", "TEXT"],
-    # )
+    # adding a table
+    table_nobel = handler.database.create_table(
+        name = "nobelprizes",
+        column_names=["ordering", "name", "description"],
+        column_types=["INTEGER", "VARCHAR(255)", "TEXT"],
+    )
+    
+    # adding multiple records in one go
+    records = handler.records_create(
+        table_nobel,
+            [
+            [1, "Peace", "Peace nobel prize"],
+            [2, "Economy", "Economy nobel prize"],
+            [3, "Physics", "Physics nobel prize"],
+            [4, "Sociology", "Sociology nobel prize"],
+            ]
+        )
+    handler.table_add_records(table_nobel, records)
+    print(f"creating multiple records")
+    print_records(table_nobel.records)
 
-    # reltbl.db.read_column_metadata(reltbl.name)
+    # adding a crossref table
+    crossref_table = handler.crossref_create(
+        tablename1="scientists",
+        tablename2="nobelprizes",
+    )
+    print(f"Database contains {handler.database.tables}")
+
+    # get crossreferences
+    crossreferences = handler.crossref_get(table_scientists)
+    print(f"Table {table_scientists} has links to {crossreferences}")
+
+    # adding a crossref
+    handler.crossref_add_record(
+        table1=table_scientists,
+        table2=table_nobel,
+        where1=[
+            ["name", "Hawking"]
+            ],
+        where2=[
+            ["name", "Economy"]
+        ],
+    )
+
+    # adding a crossref
 
     # values = [1, 2, "hawking and edison"]
     # record = reltbl.createRecord(values)
