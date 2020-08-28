@@ -114,7 +114,45 @@ class SQLiteHandler(object):
 
         return records
 
+    def table_read_foreign_records(self, table, column, where=[]):
+        """
+        for a particular tableobject and column,
+        checks if column is a foreign key
+        if so finds the table it points to and gets the records.
+        if a where is given, only give the foreign value(s) that are linked to the found rows
+        records will be returned as an array of record objects
+        """
+
+        # check if the column points to a foreign key
+        columnindex = table.column_names.index(column)
+        split = table.column_types[columnindex].split(' ', 3)
+        if len(split) != 3:
+            return
+        if split[1].upper() != "REFERENCES":
+            return
+        
+        # get the reference to the foreign table
+        foreign_table_name = split[2].split('(',1)[0]
+        foreign_table = self.database.tables[foreign_table_name]
+        print(f"foreign table {foreign_table}")
+
+        # get the records from the foreign table
+        recordobjects = self.table_read_records(foreign_table)
+        print(f"record objects of foreign table {recordobjects}")
+
+        # get the foreign keys to filter on
+        records = self.table_read_records(table=table, where=where)
+        foreign_keys = []
+        for record in records:
+            foreign_keys += [record.recorddict[column]]
+
+        return recordobjects
+
     def crossref_create(self, tablename1, tablename2):
+        """
+        Creates a crossreference table for tables with given table names.
+        Next to the columns that contain the foreign keys, a column for a description is made for additional info.
+        """
 
         crossref_table = handler.database.create_table(
             name = f"CROSSREF_{tablename1}_{tablename2}",
@@ -124,35 +162,150 @@ class SQLiteHandler(object):
 
         return crossref_table
 
-    def crossref_get_all(self, table):
-        
-        crossreferences = []
+    def crossref_get_all(self, tablename):
+        """
+        loops over all the tables in the database.
+        If they start with CROSSREF, checks if the name contains this tablename.
+        if they do, find also the table it points to
+        get an array of all the found tables and return it
+        """
+
+        tables = []
 
         for key in self.database.tables:
-            if ("CROSSREF" in key) and (table.name in key):
-                crossreferences += [key]
+            if ("CROSSREF" in key) and (tablename in key):
+                crossrefname = key
+                key = key.replace("CROSSREF", '')
+                key = key.replace(tablename, '')
+                key = key.replace('_', '')
 
-        return crossreferences        
+                table = self.database.tables[key]
+                tables += [table]
+
+        return tables       
 
     def crossref_get_one(self, tablename1, tablename2):
+        """
+        loops over all the tables in the database.
+        If they start with CROSSREF and contain both the table names, find the table it points to
+        return the found table
+        """
 
         for key in self.database.tables:
             if ("CROSSREF" in key) and (tablename1 in key) and (tablename2 in key):
-                crossreference = key
+                table = self.database.tables[key]
                 break
 
-        return crossreference 
+        return table
 
-    def crossref_add_record(table1, table2, where1, where2):
-        
+    def crossref_add_record(self, table1, table2, where1, where2, description=""):
+        """
+        adds a crossreference between tables 1 and 2 for the rows given by the where statements.
+        Creates links for any combination of the found rows of table1 and table 2. So if the where statements point to multiple rows,
+        like 1-3 in table 1 and 5-8 in table 2, it loops over all possible combinations:
+        1 - 5
+        1 - 6
+        1 - 7
+        1 - 8
 
+        2 - 5
+        2 - 6
+        2 - 7
+        2 - 8
 
-    def read_records(self, tablename, where=[]):
+        3 - 5
+        3 - 6
+        3 - 7
+        3 - 8
+        """
 
-        records = self.table_read_records(
-            table=self.database.tables[tablename], 
-            where=where,
+        # get the cross reference table
+        crossref = self.crossref_get_one(
+            tablename1 = table1.name,
+            tablename2 = table2.name, 
             )
+
+        # print(f"where1 is {where1}")
+        # get record primary keys / row id's
+        if isinstance(where1[0], int):
+            rowids1 = where1
+        else:
+            rowids1 = []
+            records = self.table_read_records(
+                table = table1,
+                where = where1,
+            )
+            for record in records:
+                rowids1 += [record.primarykey]
+        # print(f"rowids1 is {rowids1}")
+
+        # print(f"where2 is {where2}")
+        if isinstance(where2[0], int):
+            rowids2 = where2
+        else:
+            rowids2 = []
+            records = self.table_read_records(
+                table = table2,
+                where = where2,
+            )
+            for record in records:
+                rowids2 += [record.primarykey]
+        # print(f"rowids2 is {rowids2}")
+
+        # determine if tables need to be switched places
+        index1 = crossref.name.find(table1.name)
+        index2 = crossref.name.find(table2.name)
+
+        if (index1 == -1) or (index2 == -1):
+            print(f"table1 {table1.name} or table2 {table2.name} not found")
+            return
+
+        # switch columns
+        values1 = rowids1 if index1 < index2 else rowids2
+        values2 = rowids2 if index1 < index2 else rowids1
+
+        records = []
+        for value1 in values1:
+            for value2 in values2:
+                # default description
+                if description == "":
+                    description = f"Cross referenced {where1} to {where2}"
+
+                record = self.record_create(
+                    table=crossref,
+                    values=[
+                        value1, value2, description
+                    ]
+                )
+                records += [record]
+
+        self.table_add_records(crossref, records)
+
+    def crossref_read_records(self, tablename1, tablename2):
+
+        table = self.crossref_get_one(tablename1, tablename2)
+        records = self.table_read_records(table)
+
+        return records
+
+    def crossref_read_record(self, tablename1, tablename2, rowid):
+        """
+        reads the crossreference table and retrieves only elements for the rowid given of table1
+        """
+
+        table = self.crossref_get_one(tablename1, tablename2)
+        # print(table.name)
+        records = self.table_read_records(table)
+        
+        # print(records)
+
+        records_found = []
+        for record in records:
+            for valuepair in record.valuepairs:
+                if valuepair[0] == tablename1 + "_id":
+                    if valuepair[1] == rowid:
+                        records_found += [record]
+                        break
 
         return records
 
@@ -164,6 +317,7 @@ class SQLiteHandler(object):
         can be added to the table through
         table_add_records method
         """
+
         lastrow = self.database.get_max_row(table.name)
 
         recordarray = [lastrow + 1] + values
@@ -176,72 +330,19 @@ class SQLiteHandler(object):
         return record
 
     def records_create(self, table, recordsvalues):
-        
+        """
+        creates multiple draft records that can still be 
+        manipulated before making it definitive
+
+        can be added to the table through
+        table_add_records method
+        """
+
         records = []
         for values in recordsvalues:
             records += [self.record_create(table, values)]
 
         return records
-
-    def get_table_max_row(self, table):
-
-        self.database.get_max_row(table.name)
-
-    def readForeignValues(self, table, column):
-        """
-        for a particular tableobject and column,
-        checks if column is a foreign key
-        if so finds the table it points to and gets the records.
-        records will be returned as an array of record objects
-        """
-
-        columnindex = table.column_names.index(column)
-        split = table.column_types[columnindex].split(' ', 3)
-        if len(split) != 3:
-            return
-        
-        if split[1].upper() != "REFERENCES":
-            return
-        
-        foreign_table_name = split[2].split('(',1)[0]
-        foreign_table = self.tables[foreign_table_name]
-        print(f"foreign table {foreign_table}")
-
-        recordobjects = foreign_table.readAllRecords()
-        print(f"record objects of foreign table {recordobjects}")
-
-        return recordobjects
-
-    def find_cross_referenced_values(self, table, recordId=[]):
-        """
-        loops over all the tables in the database.
-        If they start with CROSSREF, checks if the name contains this tablename.
-        if they do, find also the table it points to
-        get a complete inner join of table1 and table2 based upon the crossref table
-        if recordId's are given, then filter the results for the listed id's (of table1)
-        """
-
-        for key, tableobject in self.tables:
-            if ("CROSSREF" in key.upper()) and (table.name in key):
-                keysplit = key.split('_', 3)
-                table1 = keysplit[1]
-                table2 = keysplit[2]
-                print(f"linked table found with name {key} and object {tableobject}")
-
-                if table1 == table.name:
-                    # get records from table2 and add them to the records found
-                    pass
-
-                elif table2 == table.name:
-                    # get records from table1 and add them to the records found
-                    pass
-
-    def create_crossref_table(self):
-        """
-        creates a cross reference table between two tables for a many to many or versionized relationship.
-        """
-
-        # creates table with name = CROSSREF-<table1>-<table2> , column names are <tablerecordname>_id
 
     def transform_sql_to_record(self, table, sqlrecords):
 
@@ -341,13 +442,18 @@ if __name__ == "__main__":
     print_records(records)
 
     # get records without table object, but with tablename
-    records = handler.read_records("scientists")
+    records = handler.table_read_records(table_scientists)
     print(f"read all records")
     print_records(records)
 
     # adding a table
     table_nobel = handler.database.create_table(
         name = "nobelprizes",
+        column_names=["ordering", "name", "description"],
+        column_types=["INTEGER", "VARCHAR(255)", "TEXT"],
+    )
+    table_papers = handler.database.create_table(
+        name = "papers",
         column_names=["ordering", "name", "description"],
         column_types=["INTEGER", "VARCHAR(255)", "TEXT"],
     )
@@ -366,6 +472,20 @@ if __name__ == "__main__":
     print(f"creating multiple records")
     print_records(table_nobel.records)
 
+    # adding multiple records in one go
+    records = handler.records_create(
+        table_papers,
+            [
+            [1, "Palestine", "Extrapolation on the palestinian cause"],
+            [2, "Wealth", "On the Wealth of Nations"],
+            [3, "Time", "A brief history of time"],
+            [4, "Fear", "Controlling your fear"],
+            ]
+        )
+    handler.table_add_records(table_papers, records)
+    print(f"creating multiple records")
+    print_records(table_papers.records)
+
     # adding a crossref table
     crossref_table = handler.crossref_create(
         tablename1="scientists",
@@ -373,32 +493,86 @@ if __name__ == "__main__":
     )
     print(f"Database contains {handler.database.tables}")
 
+    # adding a crossref table
+    crossref_table = handler.crossref_create(
+        tablename1="scientists",
+        tablename2="papers",
+    )
+    print(f"Database contains {handler.database.tables}")
+
     # get crossreferences
-    crossreferences = handler.crossref_get(table_scientists)
-    print(f"Table {table_scientists} has links to {crossreferences}")
+    crossreferences = handler.crossref_get_all("scientists")
+    print(f"Table {table_scientists.name} has links to:")
+    for crossreference in crossreferences:
+        print(f"- {crossreference.name}")
 
     # adding a crossref
     handler.crossref_add_record(
         table1=table_scientists,
         table2=table_nobel,
         where1=[
-            ["name", "Hawking"]
+            ["name", ["Hawking"]]
             ],
         where2=[
-            ["name", "Economy"]
-        ],
+            ["name", ["Economy"]]
+            ],
     )
 
     # adding a crossref
+    handler.crossref_add_record(
+        table1=table_scientists,
+        table2=table_nobel,
+        where1=[
+            ["name", ["Einstein"]]
+            ],
+        where2=[
+            ["name", ["Physics", "Peace"]]
+            ],
+        description="Einstein wins both peace and physics nobel prizes"
+    )
 
-    # values = [1, 2, "hawking and edison"]
-    # record = reltbl.createRecord(values)
-    # print(f"create single record")
-    # print_records([record])
+    # adding crossreff based upon primary keys
+    handler.crossref_add_record(
+        table1=table_scientists,
+        table2=table_papers,
+        where1=[1],
+        where2=[3, 4],
+        description="Hawking wrote papers about time and fear of time"
+    )
 
-    # records = reltbl.readRecords()
-    # print(f"read all records")
-    # print_records(records)
+    # reading crossreferences of all scientists and nobelprizes
+    records = handler.crossref_read_records(
+        tablename1="scientists",
+        tablename2="nobelprizes",
+        )
+    print_records(records)
+
+    # reading crossreferences of a single scientist and papers
+    records = handler.crossref_read_record(
+        tablename1="scientists",
+        tablename2="papers",
+        rowid=1,
+    )
+    print(f"looking up Hawkings papers:")
+    print_records(records)
+
+
+
+
+
+    # gathering all records of all tables
+    recordset = []
+    for key in handler.database.tables:
+        records = handler.table_read_records(handler.database.tables[key])
+        recordset += [records]
+    
+    # printing all the records of all tables
+    for records in recordset:
+        print("")
+        print_records(records)
+  
+
+
 
     # records = reltbl.readForeignValues('charid1')
 
