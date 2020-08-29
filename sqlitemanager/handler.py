@@ -77,7 +77,7 @@ class SQLiteHandler(object):
         else:
             print(f"Couldn't delete database, not connected to one!")
 
-    def table_create(self, tablename, column_names=[], column_types=[], foreign_columns=[]):
+    def table_create(self, tablename, column_names=[], column_types=[]):
         """
         By default a table will have
         - ordering: to denote a desired order of the records, by default mirrors id column
@@ -89,12 +89,6 @@ class SQLiteHandler(object):
         - ordering
         - name
         """
-
-        if foreign_columns != []:
-            for foreign_column in foreign_columns:
-                index = column_names.index(foreign_column["column name"])
-                foreign_table = foreign_column["table"]
-                column_types[index] = f"INTEGER REFERENCES {foreign_table}(id)"
 
         table = self.database.create_table(
                 name=tablename,
@@ -510,13 +504,8 @@ if __name__ == "__main__":
     # adding a table
     table_scientists = handler.table_create(
         tablename="scientists",
-        column_names = ["age", "gender"],
-        column_types = ["Integer", "INTEGER"],
-        foreign_columns = [
-            {
-                "column name": "gender",
-                "table": "genders",
-            }
+        column_names = ["age", "gender_id"],
+        column_types = ["Integer", "INTEGER REFERENCES genders(id)"],
         ]
     )
     print(f"Database contains {handler.database.tables}")
@@ -560,13 +549,13 @@ if __name__ == "__main__":
     print_records(records)
 
     # conditional read with where statement
-    where = [["gender", [1]]]
+    where = [["gender_id", [1]]]
     records = handler.table_read_records(tablename="scientists", where=where)
     print(f"read where")
     print_records(records)
 
     # update with where statement
-    valuepairs = [["gender", 1]]
+    valuepairs = [["gender_id", 1]]
     where = [["name", ["Hawking"]]]
     records = handler.table_update_records(tablename="scientists", valuepairs=valuepairs, where=where)
     print(f"update true to false")
