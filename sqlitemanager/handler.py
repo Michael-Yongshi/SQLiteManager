@@ -86,12 +86,29 @@ class SQLiteHandler(object):
     def table_add_records(self, tablename, records):
 
         table = self.database.tables[tablename]
+
+        # get current last row
+        lastrow = self.database.get_max_row(tablename)
+
+        # add the records to the table in the database
         self.database.add_records(
             table,
             records,
         )
 
+        # refresh tableobjects records
         self.table_sync(tablename)
+
+        # get last row after update
+        newlastrow = self.database.get_max_row(tablename)
+
+        # get all the just created rows (in an array lastrow of 1 is the 2nd record, so using lastrow number gets the record after the actual last row)
+        records = table.records[lastrow:newlastrow]
+
+        # print(f"Added records:")
+        # print_records(records)
+
+        return records
 
     def table_update_records(self, tablename, valuepairs, where):
         """
@@ -345,7 +362,7 @@ class SQLiteHandler(object):
             table.column_names,
             recordarray,
         )
-        print(f"created record with recordarray {record.recordarray}")
+        # print(f"created record with recordarray {record.recordarray}")
         return record
 
     def records_create(self, tablename, recordsvalues):
@@ -371,14 +388,17 @@ class SQLiteHandler(object):
         # print(sqlrecords)
 
         records = []
-        for record in sqlrecords:
+        for sqlrecord in sqlrecords:
 
             recordarray = []
-            for value in record:
+            for value in sqlrecord:
                 recordarray += [value]
 
-            recordobject = Record(table.column_names, recordarray)
-            # print(f"recordarray: {recordobject.recordarray}")
+            recordobject = Record(
+                column_names=table.column_names, 
+                recordarray=recordarray
+                )
+            # print(f"Transformed Record object with recordarray: {recordobject.recordarray}")
 
             records += [recordobject]
 
@@ -414,9 +434,9 @@ if __name__ == "__main__":
         tablename="scientists",
         values=[2, "Edison's child said \"Apple!\"", 20, True],
         )]
-    handler.table_add_records(tablename="scientists", records=records)
+    records = handler.table_add_records(tablename="scientists", records=records)
     print(f"creating multiple records")
-    print_records(handler.table_read_records(tablename="scientists"))
+    print_records(records)
     
     # adding single records
     records = []
@@ -424,9 +444,9 @@ if __name__ == "__main__":
         tablename="scientists",
         values=[3, "Einstein", 100, False],
         )]
-    handler.table_add_records(tablename="scientists", records=records)
+    records = handler.table_add_records(tablename="scientists", records=records)
     print(f"creating single records")
-    print_records(handler.table_read_records(tablename="scientists"))
+    print_records(records)
 
     # adding multiple records
     records = []
@@ -438,9 +458,9 @@ if __name__ == "__main__":
         tablename="scientists",
         values=[5, "Neil dGrasse Tyson", 57, True],
         )]
-    handler.table_add_records(tablename="scientists", records=records)
+    records = handler.table_add_records(tablename="scientists", records=records)
     print(f"creating multiple records")
-    print_records(handler.table_read_records(tablename="scientists"))
+    print_records(records)
 
     # conditional read with where statement
     where = [["nobelprizewinner", [True]]]
@@ -490,9 +510,9 @@ if __name__ == "__main__":
             [4, "Sociology", "Sociology nobel prize"],
             ]
         )
-    handler.table_add_records(tablename="nobelprizes", records=records)
+    records = handler.table_add_records(tablename="nobelprizes", records=records)
     print(f"creating multiple records")
-    print_records(handler.table_read_records(tablename="nobelprizes"))
+    print_records(records)
 
     # adding multiple records in one go
     records = handler.records_create(
@@ -504,9 +524,9 @@ if __name__ == "__main__":
             [4, "Fear", "Controlling your fear"],
             ]
         )
-    handler.table_add_records(tablename="papers", records=records)
+    records = handler.table_add_records(tablename="papers", records=records)
     print(f"creating multiple records")
-    print_records(handler.table_read_records(tablename="papers"))
+    print_records(records)
 
     # adding a crossref table
     crossref_table = handler.crossref_create(
