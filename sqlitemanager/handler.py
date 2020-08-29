@@ -77,6 +77,34 @@ class SQLiteHandler(object):
         else:
             print(f"Couldn't delete database, not connected to one!")
 
+    def table_create(self, tablename, column_names=[], column_types=[]):
+        """
+        By default a table will have
+        - ordering: to denote a desired order of the records, by default mirrors id column
+        - name: a readable reference of this record, preferably will be unique, but is not mandatory
+
+        so put only extra columns on top of these in the column names with a desired type. 
+        If they are not given at all the table will have only the columns:
+        - id
+        - ordering
+        - name
+        """
+
+        table = self.database.create_table(
+                name=tablename,
+                column_names = ["ordering", "name"] + column_names,
+                column_types = ["INTEGER", "VARCHAR(255)"] + column_types,
+            )
+        
+        return table
+
+    def table_delete(self, tablename):
+
+        table = self.database.tables[tablename]
+        self.database.delete_table(table=table)
+
+        print(f"table {tablename} deleted")
+
     def table_sync(self, tablename):
         
         table = self.database.tables[tablename]
@@ -88,7 +116,7 @@ class SQLiteHandler(object):
         table = self.database.tables[tablename]
 
         # get current last row
-        lastrow = self.database.get_max_row(tablename)
+        lastrow = self.table_max_row(tablename)
 
         # add the records to the table in the database
         self.database.add_records(
@@ -100,7 +128,7 @@ class SQLiteHandler(object):
         self.table_sync(tablename)
 
         # get last row after update
-        newlastrow = self.database.get_max_row(tablename)
+        newlastrow = self.table_max_row(tablename)
 
         # get all the just created rows (in an array lastrow of 1 is the 2nd record, so using lastrow number gets the record after the actual last row)
         records = table.records[lastrow:newlastrow]
@@ -119,10 +147,7 @@ class SQLiteHandler(object):
         [<columnname>, [<values]]
         """
 
-        if isinstance(where, int):
-            where = [["id", [where]]]
-        elif isinstance(where[0], int):
-            where = [["id", where]]
+        where = self.transform_where(where=where)
 
         records_to_be_updated = self.table_read_records(tablename, where=where)
 
@@ -196,14 +221,29 @@ class SQLiteHandler(object):
 
         return recordobjects
 
+    def table_delete_record(self, tablename, where=[]):
+
+        table = self.database.tables[tablename]
+
+        where = self.transform_where(where=where)
+
+        records = self.table_read_records(tablename=tablename, where=where)
+        self.database.delete_records(table=table, records=records)
+
+        self.table_sync(tablename)
+
+    def table_max_row(self, tablename):
+        lastrow = self.database.get_max_row(tablename)
+        return lastrow
+
     def crossref_create(self, tablename1, tablename2):
         """
         Creates a crossreference table for tables with given table names.
         Next to the columns that contain the foreign keys, a column for a description is made for additional info.
         """
 
-        crossref_table = handler.database.create_table(
-            name = f"CROSSREF_{tablename1}_{tablename2}",
+        crossref_table = self.table_create(
+            tablename = f"CROSSREF_{tablename1}_{tablename2}",
             column_names=[f"{tablename1}_id", f"{tablename2}_id", "description"],
             column_types=[f"INTEGER REFERENCES {tablename1}(id)", f"INTEGER REFERENCES {tablename2}(id)", "TEXT"],
         )
@@ -315,6 +355,8 @@ class SQLiteHandler(object):
         values1 = rowids1 if index1 < index2 else rowids2
         values2 = rowids2 if index1 < index2 else rowids1
 
+        lastrow = self.table_max_row(tablename=crossref.name)
+
         records = []
         for value1 in values1:
             for value2 in values2:
@@ -325,7 +367,7 @@ class SQLiteHandler(object):
                 record = self.record_create(
                     tablename=crossref.name,
                     values=[
-                        value1, value2, description
+                        lastrow + 1, f"{value1}-{value2}", value1, value2, description
                     ]
                 )
                 records += [record]
@@ -423,6 +465,19 @@ class SQLiteHandler(object):
 
         return records
 
+    def transform_where(self, where):
+
+        # if where is an integer, create where to delete a that record with this primary key (id column)
+        if isinstance(where, int):
+            where = [["id", [where]]]
+        
+        # if where is an array of integers, create where to delete those records with these primary keys (id column)
+        elif isinstance(where[0], int):
+            where = [["id", where]]
+
+        # otherwise, no transform is needed
+        return where
+
 def print_records(records):
     for record in records:
         print(f"primarykey: {record.primarykey}, recordpairs: {record.recordpairs}")
@@ -436,10 +491,10 @@ if __name__ == "__main__":
     handler.database_new(filename="science")
 
     # adding a table
-    table_scientists = handler.database.create_table(
-        name="scientists",
-        column_names = ["ordering", "name", "age", "nobelprizewinner"],
-        column_types = ["INTEGER", "Text", "Integer", "Bool"],
+    table_scientists = handler.table_create(
+        tablename="scientists",
+        column_names = ["age", "nobelprizewinner"],
+        column_types = ["Integer", "Bool"],
     )
     print(f"Database contains {handler.database.tables}")
 
@@ -507,17 +562,22 @@ if __name__ == "__main__":
     print_records(records)
 
     # adding a table
-    table_nobel = handler.database.create_table(
-        name = "nobelprizes",
-        column_names=["ordering", "name", "description"],
-        column_types=["INTEGER", "VARCHAR(255)", "TEXT"],
+    table_nobel = handler.table_create(
+        tablename = "nobelprizes",
+        column_names=["description"],
+        column_types=["TEXT"],
     )
-    table_papers = handler.database.create_table(
-        name = "papers",
-        column_names=["ordering", "name", "description"],
-        column_types=["INTEGER", "VARCHAR(255)", "TEXT"],
+    table_papers = handler.table_create(
+        tablename = "papers",
+        column_names=["description"],
+        column_types=["TEXT"],
     )
-    
+    table_nobel = handler.table_create(
+        tablename = "ignorants",
+        column_names=["description"],
+        column_types=["TEXT"],
+    )
+
     # adding multiple records in one go
     records = handler.records_create(
         tablename="nobelprizes",
@@ -616,9 +676,15 @@ if __name__ == "__main__":
     print(f"looking up Hawkings papers:")
     print_records(records)
 
+    where = [
+        ["name", ["Rosenburg"]]
+    ]
+    handler.table_delete_record(tablename="scientists", where=where)
+    print(f"deleted record rosenburg")
+    records = handler.table_read_records(tablename="scientists")
+    print_records(records)
 
-
-
+    handler.table_delete(tablename="ignorants")
 
     # gathering all records of all tables
     recordset = []
@@ -627,6 +693,7 @@ if __name__ == "__main__":
         recordset += [records]
     
     # printing all the records of all tables
+    print(f"Database contains {handler.database.tables}")
     for records in recordset:
         print("")
         print_records(records)

@@ -94,8 +94,7 @@ class Database(object):
         query = f"DROP TABLE {table.name}"
         self.execute_query(query)
 
-        index = self.tables.index(table)
-        self.tables.pop(index)
+        del self.tables[table.name]
 
         print(f"table {table.name} deleted and removed from table list!")
 
@@ -110,8 +109,6 @@ class Database(object):
         query = f"DELETE FROM {table.name} WHERE id IN ({placeholders})"
 
         self.execute_parameterised_query(query, parameters)
-
-        table.readAllRecords()
 
     def get_tables(self):
         """
