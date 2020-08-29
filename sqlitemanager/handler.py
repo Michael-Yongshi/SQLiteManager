@@ -114,19 +114,38 @@ class SQLiteHandler(object):
         """
         update specific records of the specified table
 
-        if where is an integer, it will update the row with that primary key.
+        if where is an integer or array of integers, it will update those specified rows based on primary key.
         otherwise a valuepair is expected in the form 
         [<columnname>, [<values]]
         """
 
         if isinstance(where, int):
             where = [["id", [where]]]
+        elif isinstance(where[0], int):
+            where = [["id", where]]
 
+        records_to_be_updated = self.table_read_records(tablename, where=where)
+
+        ids_to_be_updated = []
+        for record in records_to_be_updated:
+            ids_to_be_updated += [record.primarykey]
+        ids_to_be_updated = [["id", ids_to_be_updated]]
+
+        # the actual updating
         self.database.update_records(
             tablename=tablename, 
             valuepairs = valuepairs,
             where=where,
         )
+
+        # refresh table records
+        self.table_sync(tablename)
+
+        print(f"ids to be updated {ids_to_be_updated}")
+        # read updated records from primary key list
+        records = self.table_read_records(tablename, where=ids_to_be_updated)
+
+        return records
 
     def table_read_records(self, tablename, where=[]):
 
@@ -471,15 +490,14 @@ if __name__ == "__main__":
     # update with where statement
     valuepairs = [["nobelprizewinner", False]]
     where = [["nobelprizewinner", [True]], ["name", ["Hawking"]]]
-    handler.table_update_records(tablename="scientists", valuepairs=valuepairs, where=where)
-    records = handler.table_read_records(tablename="scientists")
+    records = handler.table_update_records(tablename="scientists", valuepairs=valuepairs, where=where)
     print(f"update true to false")
     print_records(records)
 
+    # update with direct primary id
     valuepairs = [["name", "Neil de'Grasse Tyson"], ["age", 40]]
     rowid = 5
-    handler.table_update_records(tablename="scientists", valuepairs=valuepairs, where=rowid)
-    records = handler.table_read_records(tablename="scientists")
+    records = handler.table_update_records(tablename="scientists", valuepairs=valuepairs, where=rowid)
     print(f"update record 'id = 5'")
     print_records(records)
 
