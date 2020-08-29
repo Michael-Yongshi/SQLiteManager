@@ -77,7 +77,7 @@ class SQLiteHandler(object):
         else:
             print(f"Couldn't delete database, not connected to one!")
 
-    def table_create(self, tablename, column_names=[], column_types=[]):
+    def table_create(self, tablename, column_names=[], column_types=[], foreign_columns=[]):
         """
         By default a table will have
         - ordering: to denote a desired order of the records, by default mirrors id column
@@ -89,6 +89,12 @@ class SQLiteHandler(object):
         - ordering
         - name
         """
+
+        if foreign_columns != []:
+            for foreign_column in foreign_columns:
+                index = column_names.index(foreign_column["column name"])
+                foreign_table = foreign_column["table"]
+                column_types[index] = f"INTEGER REFERENCES {foreign_table}(id)"
 
         table = self.database.create_table(
                 name=tablename,
@@ -185,13 +191,11 @@ class SQLiteHandler(object):
 
         return records
 
-    def table_read_foreign_records(self, tablename, column, where=[]):
+    def table_get_foreign_table(self, tablename, column):
         """
         for a particular tableobject and column,
         checks if column is a foreign key
-        if so finds the table it points to and gets the records.
-        if a where is given, only give the foreign value(s) that are linked to the found rows
-        records will be returned as an array of record objects
+        if so finds the table it points to
         """
 
         table = self.database.tables[tablename]
@@ -203,23 +207,36 @@ class SQLiteHandler(object):
             return
         if split[1].upper() != "REFERENCES":
             return
-        
+
         # get the reference to the foreign table
         foreign_table_name = split[2].split('(',1)[0]
         foreign_table = self.database.tables[foreign_table_name]
-        print(f"foreign table {foreign_table}")
+        # print(f"foreign table {foreign_table}")
 
+        return foreign_table
+
+    def table_get_foreign_records(self, tablename, column, where=[]):
+        """
+        for a particular tableobject and column,
+        checks if column is a foreign key
+        if so finds the table it points to and gets the records.
+        if a where is given, only give the foreign value(s) that are linked to the found rows
+        records will be returned as an array of record objects
+        """
+
+        foreign_table = self.table_get_foreign_table(tablename=tablename, column=column)
+        
         # get the records from the foreign table
-        recordobjects = self.table_read_records(foreign_table)
-        print(f"record objects of foreign table {recordobjects}")
+        records = self.table_read_records(foreign_table)
+        # print(f"record objects of foreign table {records}")
 
         # get the foreign keys to filter on
-        records = self.table_read_records(tablename=tablename, where=where)
-        foreign_keys = []
-        for record in records:
-            foreign_keys += [record.recorddict[column]]
+        # records = self.table_read_records(tablename=tablename, where=where)
+        # foreign_keys = []
+        # for record in records:
+        #     foreign_keys += [record.recorddict[column]]
 
-        return recordobjects
+        return records
 
     def table_delete_records(self, tablename, where=[]):
 
@@ -493,8 +510,14 @@ if __name__ == "__main__":
     # adding a table
     table_scientists = handler.table_create(
         tablename="scientists",
-        column_names = ["age", "nobelprizewinner"],
-        column_types = ["Integer", "Bool"],
+        column_names = ["age", "gender"],
+        column_types = ["Integer", "INTEGER"],
+        foreign_columns = [
+            {
+                "column name": "gender",
+                "table": "genders",
+            }
+        ]
     )
     print(f"Database contains {handler.database.tables}")
 
@@ -502,11 +525,11 @@ if __name__ == "__main__":
     records = []
     records += [handler.record_create(
         tablename="scientists",
-        values=[1, "Hawking", 68, True],
+        values=[1, "Hawking", 68, 2],
         )]
     records += [handler.record_create(
         tablename="scientists",
-        values=[2, "Edison's child said \"Apple!\"", 20, True],
+        values=[2, "Marie Curie", 20, 2],
         )]
     records = handler.table_add_records(tablename="scientists", records=records)
     print(f"creating multiple records")
@@ -516,7 +539,7 @@ if __name__ == "__main__":
     records = []
     records += [handler.record_create(
         tablename="scientists",
-        values=[3, "Einstein", 100, False],
+        values=[3, "Einstein", 100, 1],
         )]
     records = handler.table_add_records(tablename="scientists", records=records)
     print(f"creating single records")
@@ -526,7 +549,7 @@ if __name__ == "__main__":
     records = []
     records += [handler.record_create(
         tablename="scientists",
-        values=[4, "Rosenburg", 78, False],
+        values=[4, "Rosenburg", 78, 1],
         )]
     records += [handler.record_create(
         tablename="scientists",
@@ -537,14 +560,14 @@ if __name__ == "__main__":
     print_records(records)
 
     # conditional read with where statement
-    where = [["nobelprizewinner", [True]]]
+    where = [["gender", [1]]]
     records = handler.table_read_records(tablename="scientists", where=where)
     print(f"read where")
     print_records(records)
 
     # update with where statement
-    valuepairs = [["nobelprizewinner", False]]
-    where = [["nobelprizewinner", [True]], ["name", ["Hawking"]]]
+    valuepairs = [["gender", 1]]
+    where = [["name", ["Hawking"]]]
     records = handler.table_update_records(tablename="scientists", valuepairs=valuepairs, where=where)
     print(f"update true to false")
     print_records(records)
@@ -679,7 +702,7 @@ if __name__ == "__main__":
     where = [
         ["name", ["Rosenburg"]]
     ]
-    handler.table_delete_record(tablename="scientists", where=where)
+    handler.table_delete_records(tablename="scientists", where=where)
     print(f"deleted record rosenburg")
     records = handler.table_read_records(tablename="scientists")
     print_records(records)
