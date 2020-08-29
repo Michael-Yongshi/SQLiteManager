@@ -221,7 +221,7 @@ class SQLiteHandler(object):
 
         return recordobjects
 
-    def table_delete_record(self, tablename, where=[]):
+    def table_delete_records(self, tablename, where=[]):
 
         table = self.database.tables[tablename]
 
