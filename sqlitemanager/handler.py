@@ -111,7 +111,7 @@ class SQLiteHandler(object):
                 tableobject = Table(tablename, column_names, column_types, records)
                 self.database.tables.update({tableobject.name: tableobject})
 
-    def table_create(self, tablename, column_names=[], column_types=[]):
+    def table_create(self, tablename, recordname="", column_names=[], column_types=[], column_placements=[], defaults=[]):
         """
         By default a table will have
         - ordering: to denote a desired order of the records, by default mirrors id column
@@ -126,8 +126,11 @@ class SQLiteHandler(object):
 
         table = self.database.create_table(
                 name=tablename,
+                recordname=recordname,
                 column_names = ["ordering", "name"] + column_names,
                 column_types = ["INTEGER", "VARCHAR(255)"] + column_types,
+                column_placements = column_placements,
+                defaults = defaults,
             )
         
         return table
