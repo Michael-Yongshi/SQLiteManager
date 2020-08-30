@@ -266,7 +266,7 @@ class SQLiteHandler(object):
         foreign_table = self.table_get_foreign_table(tablename=tablename, column=column)
         
         # get the records from the foreign table
-        records = self.table_read_records(foreign_table)
+        records = self.table_read_records(foreign_table.name)
         # print(f"record objects of foreign table {records}")
 
         # get the foreign keys to filter on
