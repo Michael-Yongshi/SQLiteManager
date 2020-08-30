@@ -265,7 +265,7 @@ class Database(object):
         # print(f"sqlrecords {records}")
         return records
 
-    def create_table(self, name, record_name="", column_names = [], column_types = [], column_placement=[], defaults=[]):
+    def create_table(self, name, record_name="", column_names = [], column_types = [], column_placements=[], defaults=[]):
         """
         collects input of table name and column information
         builds a single query and 
@@ -293,7 +293,7 @@ class Database(object):
             record_name=record_name,
             column_names = column_names,
             column_types = column_types,
-            column_placement=column_placement,
+            column_placements=column_placements,
             defaults = [],
         )
 
@@ -395,7 +395,7 @@ class Database(object):
 
 
 class Table(object):
-    def __init__(self, name, column_names, column_types, records = (), column_placement = [], defaults = [], record_name = ""):
+    def __init__(self, name, column_names, column_types, records = (), column_placements = [], defaults = [], record_name = ""):
         super().__init__()
 
         # set table and record names
@@ -410,7 +410,7 @@ class Table(object):
         self.column_types = column_types
 
         self.set_defaults(defaults)
-        self.set_column_placement(column_placement)
+        self.set_column_placements(column_placements)
 
         self.records = records
 
@@ -437,20 +437,20 @@ class Table(object):
 
             # print(f"defaults set are {self.defaults}")
         
-    def set_column_placement(self, column_placement):
+    def set_column_placements(self, column_placements):
 
-        if column_placement != []:
+        if column_placements != []:
             id_placement = [0,0,1,1]
-            self.column_placement = [id_placement] + column_placement
+            self.column_placements = [id_placement] + column_placements
 
         else:
-            self.column_placement = []
+            self.column_placements = []
 
             for index, value in enumerate(self.column_names):
                 indexconfig = [index,0,1,1]
-                self.column_placement += [indexconfig]
+                self.column_placements += [indexconfig]
 
-        # print(f"column_placement set are {self.column_placement}")
+        # print(f"column_placements set are {self.column_placements}")
 
 
 class Record(object):
