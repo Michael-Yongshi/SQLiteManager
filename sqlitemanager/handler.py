@@ -126,7 +126,7 @@ class SQLiteHandler(object):
 
         table = self.database.create_table(
                 name=tablename,
-                recordname=recordname,
+                record_name=record_name,
                 column_names = ["ordering", "name"] + column_names,
                 column_types = ["INTEGER", "VARCHAR(255)"] + column_types,
                 column_placements = column_placements,
