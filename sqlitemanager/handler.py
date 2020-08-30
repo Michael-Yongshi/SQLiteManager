@@ -148,6 +148,14 @@ class SQLiteHandler(object):
         sqlrecords = self.database.read_records(tablename=tablename, columns=table.column_names)
         table.records = self.transform_sql_to_record(column_names=table.column_names, sqlrecords=sqlrecords)
 
+    def table_create_add_records(self, tablename, recordsvalues):
+        """
+        create records from given values and immediately add records in one go to specified table
+        """
+
+        records = self.records_create(tablename, recordsvalues)
+        self.table_add_records(tablename, records)
+
     def table_add_records(self, tablename, records):
 
         table = self.database.tables[tablename]
