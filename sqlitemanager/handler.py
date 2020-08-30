@@ -506,7 +506,6 @@ if __name__ == "__main__":
         tablename="scientists",
         column_names = ["age", "gender_id"],
         column_types = ["Integer", "INTEGER REFERENCES genders(id)"],
-        ]
     )
     print(f"Database contains {handler.database.tables}")
 
