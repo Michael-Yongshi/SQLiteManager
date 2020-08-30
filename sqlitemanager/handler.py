@@ -458,7 +458,7 @@ class SQLiteHandler(object):
 
         return records
 
-    def record_create(self, tablename, values=[]):
+    def record_create(self, tablename, values=[], recordarray=[]):
         """
         creates a draft record that can still be 
         manipulated before making it definitive
@@ -470,10 +470,18 @@ class SQLiteHandler(object):
 
         table = self.database.tables[tablename]
 
-        if values == []:
-            recordarray = table.defaults
-        else:
+        # if recordarray is given, take it as is
+        if recordarray != []:
+            pass
+
+        # if instead only values is given, add a new id in front and take that as recordarray
+        # (this will be a new record in the database and has therefore no id yet)
+        elif values != []:
             recordarray = [-1] + values
+
+        # if nothing is given, fill the values with default values
+        else:
+            recordarray = table.defaults
 
         record = Record(
             table.column_names,
