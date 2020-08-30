@@ -1,10 +1,9 @@
-from database import (
+from .database import (
     Database,
     Table,
     Record,
-)
-
-from helpers import (
+    )
+from .helpers import (
     get_localpath,
     check_existance,
 )
@@ -58,6 +57,10 @@ class SQLiteHandler(object):
 
         if exists == True:
             self.database_init(filename=filename, path=path)
+            
+            # pull all sql tables and records
+            self.database_open_tables()
+
         else:
             print(f"Couldnt open database, database with filename {filename} at directory {path} doesn't exist!")
 
@@ -76,6 +79,37 @@ class SQLiteHandler(object):
             self.database = None
         else:
             print(f"Couldn't delete database, not connected to one!")
+
+    def database_open_tables(self):
+        """
+        Refresh all tables
+        """
+
+        # clear tables in database variable
+        self.database.tables = {}
+
+        # get existing tables names
+        tablenames = self.database.read_table_names()
+        tablenames.sort()
+        # print(f"getting tablenames for database {self.filename}")
+
+        # for every table create table object and add to database variable
+        for tablename in tablenames:
+            if tablename != 'sqlite_sequence':
+
+                # get metadata for table
+                metadata = self.database.read_column_metadata(tablename)
+                column_order = metadata["column_order"]
+                column_names = metadata["column_names"]
+                column_types = self.database.read_column_types(tablename)
+
+                # get records of table
+                sqlrecords = self.database.read_records(tablename=tablename, where="")
+                records = self.transform_sql_to_record(column_names=column_names, sqlrecords=sqlrecords)
+
+                # create table object and add to tables dict
+                tableobject = Table(tablename, column_names, column_types, records)
+                self.database.tables.update({tableobject.name: tableobject})
 
     def table_create(self, tablename, column_names=[], column_types=[]):
         """
@@ -109,7 +143,7 @@ class SQLiteHandler(object):
         
         table = self.database.tables[tablename]
         sqlrecords = self.database.read_records(tablename=tablename, columns=table.column_names)
-        table.records = self.transform_sql_to_record(table=table, sqlrecords=sqlrecords)
+        table.records = self.transform_sql_to_record(column_names=table.column_names, sqlrecords=sqlrecords)
 
     def table_add_records(self, tablename, records):
 
@@ -180,7 +214,7 @@ class SQLiteHandler(object):
             records = table.records
         else:
             sqlrecords = self.database.read_records(tablename=tablename, columns=table.column_names, where=where)
-            records = self.transform_sql_to_record(table=table, sqlrecords=sqlrecords)
+            records = self.transform_sql_to_record(column_names=table.column_names, sqlrecords=sqlrecords)
             # print(f"{self.name} records retrieved: {self.records}")
 
         return records
@@ -452,7 +486,7 @@ class SQLiteHandler(object):
 
         return records
 
-    def transform_sql_to_record(self, table, sqlrecords):
+    def transform_sql_to_record(self, column_names, sqlrecords):
         """
         uses table object as input, as its used privately and not made to be called directly by using application
         """
@@ -467,7 +501,7 @@ class SQLiteHandler(object):
                 recordarray += [value]
 
             recordobject = Record(
-                column_names=table.column_names, 
+                column_names=column_names, 
                 recordarray=recordarray
                 )
             # print(f"Transformed Record object with recordarray: {recordobject.recordarray}")
@@ -477,7 +511,7 @@ class SQLiteHandler(object):
         return records
 
     def transform_where(self, where):
-
+        
         # if where is an integer, create where to delete a that record with this primary key (id column)
         if isinstance(where, int):
             where = [["id", [where]]]
@@ -489,9 +523,11 @@ class SQLiteHandler(object):
         # otherwise, no transform is needed
         return where
 
+
 def print_records(records):
     for record in records:
         print(f"primarykey: {record.primarykey}, recordpairs: {record.recordpairs}")
+
 
 if __name__ == "__main__":
 
