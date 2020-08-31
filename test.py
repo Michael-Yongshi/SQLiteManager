@@ -1,179 +1,198 @@
-from sqlitemanager.handler import (
-    SQLiteHandler,
+from sqlitemanager.handler import SQLiteHandler
+
+
+def print_records(records):
+    for record in records:
+        print(f"primarykey: {record.primarykey}, recordpairs: {record.recordpairs}")
+
+
+# connect to database
+handler = SQLiteHandler()
+handler.database_open(filename="science")
+handler.database_delete()
+handler.database_new(filename="science")
+
+# add a table
+handler.table_create(
+    tablename="scientists",
+        column_names = ["age", "gender_id"],
+        column_types = ["Integer", "INTEGER REFERENCES genders(id)"],
+    )
+print(handler.database.tables)
+
+# add some records directly in the database
+handler.table_create_add_records(
+    tablename="scientists",
+    recordsvalues=[
+        [1, "Hawking", 68, 2],
+        [2, "Marie Curie", 20, 2],
+        [3, "Einstein", 100, 1],
+        [4, "Rosenburg", 78, 1],
+        [5, "Neil dGrasse Tyson", 57, True],
+        ]
+    )
+
+# gather records through accessing the table object (better performance)
+print(handler.database.tables["scientists"].records)
+
+# read the records from the database (performance heavy for large databases)
+print(handler.table_read_records(tablename="scientists"))
+
+# conditional read with where statement
+where = [["gender_id", [1]]]
+records = handler.table_read_records(tablename="scientists", where=where)
+print(f"read where")
+print_records(records)
+
+# update with where statement
+valuepairs = [["gender_id", 1]]
+where = [["name", ["Hawking"]]]
+records = handler.table_update_records(tablename="scientists", valuepairs=valuepairs, where=where)
+print(f"update true to false")
+print_records(records)
+
+# update with direct primary id
+valuepairs = [["name", "Neil de'Grasse Tyson"], ["age", 40]]
+rowid = 5
+records = handler.table_update_records(tablename="scientists", valuepairs=valuepairs, where=rowid)
+print(f"update record 'id = 5'")
+print_records(records)
+
+# adding more tables
+table_nobel = handler.table_create(
+    tablename = "nobelprizes",
+    column_names=["description"],
+    column_types=["TEXT"],
+)
+table_papers = handler.table_create(
+    tablename = "papers",
+    column_names=["description"],
+    column_types=["TEXT"],
+)
+table_nobel = handler.table_create(
+    tablename = "ignorants",
+    column_names=["description"],
+    column_types=["TEXT"],
 )
 
-if __name__ == '__main__':
-
-    # opening a database
-    handler = SQLiteHandler()
-    handler.database_open(filename="science")
-    handler.database_delete()
-    handler.database_new(filename="science")
-
-    # adding a table
-    table_scientists = handler.database.create_table(
-        name="scientists",
-        column_names = ["ordering", "name", "age", "nobelprizewinner"],
-        column_types = ["INTEGER", "Text", "Integer", "Bool"],
+# creating multiple records and return them (these are not yet saved in the database)
+records = handler.records_create(
+    tablename="nobelprizes",
+    recordsvalues=[
+        [1, "Peace", "Peace nobel prize"],
+        [2, "Economy", "Economy nobel prize"],
+        [3, "Physics", "Physics nobel prize"],
+        [4, "Sociology", "Sociology nobel prize"],
+        ]
     )
-    print(f"Database contains {handler.database.tables}")
+# adding these records to the database
+records = handler.table_add_records(tablename="nobelprizes", records=records)
+print(f"creating multiple records")
+print_records(records)
 
-    # adding multiple records
-    records = []
-    records += [handler.record_create(
-        table_scientists,
-        [1, "Hawking", 68, True],
-        )]
-    records += [handler.record_create(
-        table_scientists,
-        [2, "Edison's child said \"Apple!\"", 20, True],
-        )]
-    handler.table_add_records(table_scientists, records)
-    print(f"creating multiple records")
-    print_records(table_scientists.records)
-    
-    # adding single records
-    records = []
-    records += [handler.record_create(
-        table_scientists,
-        [3, "Einstein", 100, False],
-        )]
-    handler.table_add_records(table_scientists, records)
-    print(f"creating single records")
-    print_records(table_scientists.records)
-
-    # adding multiple records
-    records = []
-    records += [handler.record_create(
-        table_scientists,
-        [4, "Rosenburg", 78, False],
-        )]
-    records += [handler.record_create(
-        table_scientists,
-        [5, "Neil dGrasse Tyson", 57, True],
-        )]
-    handler.table_add_records(table_scientists, records)
-    print(f"creating multiple records")
-    print_records(table_scientists.records)
-
-    # conditional read with where statement
-    where = [["nobelprizewinner", [True]]]
-    records = handler.table_read_records(table=table_scientists, where=where)
-    print(f"read where")
-    print_records(records)
-
-    # update with where statement
-    valuepairs = [["nobelprizewinner", False]]
-    where = [["nobelprizewinner", [True]], ["name", ["Hawking"]]]
-    handler.table_update_records(table=table_scientists, valuepairs=valuepairs, where=where)
-    records = handler.table_read_records(table=table_scientists)
-    print(f"update true to false")
-    print_records(records)
-
-    valuepairs = [["name", "Neil de'Grasse Tyson"], ["age", 40]]
-    rowid = 5
-    handler.table_update_records(table=table_scientists, valuepairs=valuepairs, where=rowid)
-    records = handler.table_read_records(table=table_scientists)
-    print(f"update record 'id = 5'")
-    print_records(records)
-
-    # get records without table object, but with tablename
-    records = handler.table_read_records(table_scientists)
-    print(f"read all records")
-    print_records(records)
-
-    # adding a table
-    table_nobel = handler.database.create_table(
-        name = "nobelprizes",
-        column_names=["ordering", "name", "description"],
-        column_types=["INTEGER", "VARCHAR(255)", "TEXT"],
+# again
+records = handler.table_create_add_records(
+    tablename="papers",
+    recordsvalues=[
+        [1, "Palestine", "Extrapolation on the palestinian cause"],
+        [2, "Wealth", "On the Wealth of Nations"],
+        [3, "Time", "A brief history of time"],
+        [4, "Fear", "Controlling your fear"],
+        ]
     )
-    
-    # adding multiple records in one go
-    records = handler.records_create(
-        table_nobel,
-            [
-            [1, "Peace", "Peace nobel prize"],
-            [2, "Economy", "Economy nobel prize"],
-            [3, "Physics", "Physics nobel prize"],
-            [4, "Sociology", "Sociology nobel prize"],
-            ]
-        )
-    handler.table_add_records(table_nobel, records)
-    print(f"creating multiple records")
-    print_records(table_nobel.records)
+print(f"creating multiple records")
+print_records(records)
 
-    # adding a crossref table
-    crossref_table = handler.crossref_create(
-        tablename1="scientists",
-        tablename2="nobelprizes",
+# adding a crossref table
+crossref_table = handler.crossref_create(
+    tablename1="scientists",
+    tablename2="nobelprizes",
+)
+print(f"Database contains {handler.database.tables}")
+
+# adding a crossref table
+crossref_table = handler.crossref_create(
+    tablename1="scientists",
+    tablename2="papers",
+)
+print(f"Database contains {handler.database.tables}")
+
+# get crossreferences
+crossreferences = handler.crossref_get_all(tablename="scientists")
+print(f"Table scientists has links to:")
+for crossreference in crossreferences:
+    print(f"- {crossreference.name}")
+
+# adding a crossref
+handler.crossref_add_record(
+    tablename1="scientists",
+    tablename2="nobelprizes",
+    where1=[
+        ["name", ["Hawking"]]
+        ],
+    where2=[
+        ["name", ["Economy"]]
+        ],
+)
+
+# adding a crossref
+handler.crossref_add_record(
+    tablename1="scientists",
+    tablename2="nobelprizes",
+    where1=[
+        ["name", ["Einstein"]]
+        ],
+    where2=[
+        ["name", ["Physics", "Peace"]]
+        ],
+    description="Einstein wins both peace and physics nobel prizes"
+)
+
+# adding crossreff based upon primary keys
+handler.crossref_add_record(
+    tablename1="scientists",
+    tablename2="papers",
+    where1=[1],
+    where2=[3, 4],
+    description="Hawking wrote papers about time and fear of time"
+)
+
+# reading crossreferences of all scientists and nobelprizes
+records = handler.crossref_read_records(
+    tablename1="scientists",
+    tablename2="nobelprizes",
     )
-    print(f"Database contains {handler.database.tables}")
+print_records(records)
 
-    # get crossreferences
-    crossreferences = handler.crossref_get_all("scientists")
-    print(f"Table {table_scientists.name} has links to {crossreferences}")
+# reading crossreferences of a single scientist and papers
+records = handler.crossref_read_record(
+    tablename1="scientists",
+    tablename2="papers",
+    rowid=1,
+)
+print(f"looking up Hawkings papers:")
+print_records(records)
 
-    # adding a crossref
-    handler.crossref_add_record(
-        table1=table_scientists,
-        table2=table_nobel,
-        where1=[
-            ["name", ["Hawking"]]
-            ],
-        where2=[
-            ["name", ["Economy"]]
-            ],
-    )
+# deleting record
+where = [
+    ["name", ["Rosenburg"]]
+]
+handler.table_delete_records(tablename="scientists", where=where)
+print(f"deleted record rosenburg")
+records = handler.table_read_records(tablename="scientists")
+print_records(records)
 
-    # adding a crossref
-    handler.crossref_add_record(
-        table1=table_scientists,
-        table2=table_nobel,
-        where1=[
-            ["name", ["Einstein"]]
-            ],
-        where2=[
-            ["name", ["Physics", "Peace"]]
-            ],
-        description="Einstein wins both peace and physics nobel prizes"
-    )
+# delete a table
+handler.table_delete(tablename="ignorants")
 
-    # reading crossreferences
-    records = handler.crossref_read_records(
-        tablename1="scientists",
-        tablename2="nobelprizes",
-        )
+# gathering all records of all tables
+recordset = []
+for tablename in handler.database.tables:
+    records = handler.table_read_records(tablename)
+    recordset += [records]
+
+# printing all the records of all tables
+print(f"Database contains {handler.database.tables}")
+for records in recordset:
+    print("")
     print_records(records)
-
-    # records = reltbl.readRecords()
-    # print(f"read all records")
-    # print_records(records)
-
-    # records = reltbl.readForeignValues('charid1')
-
-    # db.saveas_database(filename="backup")
-    # db.close_database()
-
-    # filename = "science"
-
-    # db = Database(filename=filename)
-
-    # teachertbl = db.create_table(
-    #     name="teachers",
-    #     column_names = ["ordering", "name", "age", "active"],
-    #     column_types = ["INTEGER", "Text", "Integer", "Bool"],
-    # )
-
-    # db.delete_table(teachertbl)
-
-    # table_scientists = db.get_table("scientists")
-
-    # where = [["nobelprizewinner", [True]]]
-    # records = table_scientists.readRecords(where=where)
-
-    # table_scientists.deleteRecords(records)
-
-    # for table in db.tables:
-    #     print(f"printing for table: {table.name}")
-    #     print_records(table.records)

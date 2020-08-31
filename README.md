@@ -1,31 +1,24 @@
 # SQLiteManager
-Has a Database, Table and Record object to easily manipulate SQLite storage
+Use a convenient SQLiteHandler object to manipulate SQLite(3) databases.
 
 ## Version
-### 0.1
+### 0.3.x
+- Adds handler.py with a SQLiteHandler object
+- moves support methods to helpers.py
 
+### 0.2.x
+- Basic objects in database.py for Database, Tables and Records
 
 ## Install
 ```
 pip install sqlitemanager
 ```
 
-## Import
-### Directly usable
-import the directly usable objects
-```
-from sqlitemanager import Database
-from sqlitemanager import Table
-from sqlitemanager import Record
-```
-
-### Generic Database class
-
 ## How to
+Primarily use the handler to do database manipulation for you instead of directly edit the data objects. The handler is built to make manipulation of the objects even simpler. See the test.py file for a complete example of how to use the SQLiteHandler.
 
-```
-
-```
+## Tests
+Run test.py in order to test the package.
 
 ## Licence
 
