@@ -16,6 +16,7 @@ pip install sqlitemanager
 
 ## How to
 Primarily use the handler to do database manipulation for you instead of directly edit the data objects. The handler is built to make manipulation of the objects even simpler. See the test.py file for a complete example of how to use the SQLiteHandler.
+https://github.com/Michael-Yongshi/SQLiteManager/blob/master/test.py
 
 ## Tests
 Run test.py in order to test the package.
