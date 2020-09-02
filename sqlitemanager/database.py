@@ -280,6 +280,7 @@ class Database(object):
         # enumerate over column names and types
         for index, column_name in enumerate(column_names):
             columns += [f"{column_name} {column_types[index]}"]
+        # print(f"create table columns {columns}")
 
         # transform variables to string format
         valuetext = ',\n'.join(columns)
@@ -293,7 +294,7 @@ class Database(object):
             record_name=record_name,
             column_names = column_names,
             column_types = column_types,
-            column_placements=column_placements,
+            column_placements=[],
             defaults = [],
         )
 
