@@ -309,11 +309,11 @@ class RecordTableDialog(TableDialog):
         self.setWindowTitle("Create a new Record table")
 
         self.name = QLineEdit(self)
-        self.name.setText("Table name")
+        self.name.setText("Tablename")
         self.name.setToolTip("Insert a table name, no spaces")
 
         self.recordname = QLineEdit(self)
-        self.recordname.setText("Record name")
+        self.recordname.setText("Recordname")
         self.recordname.setToolTip("""
         Insert a record name. If left empty the record will have the table name minus the last letter (assuming table names are multiples of the records they represent
         """)

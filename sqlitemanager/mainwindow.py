@@ -85,7 +85,7 @@ class SQLmainwindow(QMainWindow):
         # set menu bar
         self.initMenu()
 
-
+        # set UI
         self.initUI()
 
     def initMenu(self):
@@ -546,4 +546,3 @@ class SQLmainwindow(QMainWindow):
     def toggle_hidden_tables(self):
         self.show_hidden_tables = True if self.show_hidden_tables == False else False
         self.initUI()
-
