@@ -124,11 +124,14 @@ class SQLiteHandler(object):
         - name
         """
 
+        column_names = ["ordering", "name"] + column_names
+        column_types = ["INTEGER", "VARCHAR(255)"] + column_types
+
         table = self.database.create_table(
                 name=tablename,
                 record_name=record_name,
-                column_names = ["ordering", "name"] + column_names,
-                column_types = ["INTEGER", "VARCHAR(255)"] + column_types,
+                column_names = column_names,
+                column_types = column_types,
                 column_placements = column_placements,
                 defaults = defaults,
             )
