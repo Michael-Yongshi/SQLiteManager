@@ -42,8 +42,8 @@ from PyQt5.QtGui import (
     QIcon,
     )
     
-from guidarktheme.widget_template import *
-from guidarktheme.decorators import Decorators
+from darktheme.widget_template import *
+from darktheme.decorators import Decorators
 
 from .widgets import (
     RecordLayout,
