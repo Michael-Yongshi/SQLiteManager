@@ -438,7 +438,7 @@ class SQLiteHandler(object):
 
         return records
 
-    def crossref_read_record(self, tablename1, tablename2, rowid):
+    def crossref_read_record(self, tablename1, tablename2, primarykey):
         """
         reads the crossreference table and retrieves only elements for the rowid given of table1
         """
@@ -453,7 +453,7 @@ class SQLiteHandler(object):
         for record in records:
             for valuepair in record.valuepairs:
                 if valuepair[0] == tablename1 + "_id":
-                    if valuepair[1] == rowid:
+                    if valuepair[1] == primarykey:
                         records_found += [record]
                         break
 

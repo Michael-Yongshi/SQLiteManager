@@ -53,8 +53,8 @@ print_records(records)
 
 # update with direct primary id
 valuepairs = [["name", "Neil de'Grasse Tyson"], ["age", 40]]
-rowid = 5
-records = handler.table_update_records(tablename="scientists", valuepairs=valuepairs, where=rowid)
+primarykey = 5
+records = handler.table_update_records(tablename="scientists", valuepairs=valuepairs, where=primarykey)
 print(f"update record 'id = 5'")
 print_records(records)
 
@@ -168,7 +168,7 @@ print_records(records)
 records = handler.crossref_read_record(
     tablename1="scientists",
     tablename2="papers",
-    rowid=1,
+    primarykey=1,
 )
 print(f"looking up Hawkings papers:")
 print_records(records)
@@ -196,3 +196,6 @@ print(f"Database contains {handler.database.tables}")
 for records in recordset:
     print("")
     print_records(records)
+
+# clean up by closing database
+handler.database_close()
