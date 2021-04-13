@@ -457,7 +457,7 @@ class SQLiteHandler(object):
                         records_found += [record]
                         break
 
-        return records
+        return records_found
 
     def record_create(self, tablename, values=[], recordarray=[]):
         """
