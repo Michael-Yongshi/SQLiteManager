@@ -516,3 +516,20 @@ class Record(object):
         for index, name in enumerate(column_names[1:]):
             self.recorddict.update({name: self.recordarray[1:][index]})
         # print(f"set recorddict {self.recorddict}")
+
+    def get_column_value(self, column_name):
+        """
+        method to easily retrieve a value for a specific column
+        """
+
+        # loop over all records valuepairs
+        for valuepair in self.valuepairs:
+            
+            # if column name is found return the value
+            if valuepair[0] == column_name:
+
+                column_value = valuepair[1]
+                return column_value
+
+        print("Column not found")
+        return "Column not found"
