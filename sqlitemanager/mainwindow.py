@@ -1,44 +1,21 @@
-import sys
-import os
-from datetime import datetime
-
-from PyQt5.QtCore import (
-    Qt,
-    pyqtSignal,
-    QDate,
-    QDateTime,
-    )
 
 from PyQt5.QtWidgets import (
     QAction,
-    QApplication,
-    QCheckBox,
-    QComboBox,
-    QDateTimeEdit,
     QFileDialog,
-    QFormLayout,
-    QFrame,
     QGridLayout,
     QHBoxLayout,
     QInputDialog,
-    QLabel,
-    QLineEdit,
     QListWidget,
     QListWidgetItem,
     QMainWindow,
     QMessageBox,
-    QProgressBar,
     QPushButton, 
     QScrollArea,
     QSizePolicy,
-    QSpinBox,
     QVBoxLayout,
-    QWidget, 
     )
 
 from PyQt5.QtGui import (
-    QFont,
-    QFontDatabase,
     QIcon,
     )
     
@@ -50,11 +27,7 @@ from .widgets import (
     RecordTableDialog,
     )
 from .handler import SQLiteHandler
-from .database import (
-    Database,
-    Table,
-    Record,
-    )
+
 from .helpers import (
     check_existance,
     get_localpath,
