@@ -20,6 +20,7 @@ https://github.com/Michael-Yongshi/SQLiteManager/blob/master/test_gui.py
 
 ## Tests
 Run test_handler.py in order to test the package.
+For the Gui tests you need PyQt5 and pyqt-darktheme pip packages
 
 ## Licence
 
