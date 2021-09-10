@@ -63,7 +63,7 @@ class RecordLayout(QGridLayout):
             # print(f"columntype.upper = {columntype.upper()}")
             if "REFERENCES" in columntype.upper():
                 fkfound = True
-                print(f"index {index} and recordarray {recordarray}, found foreign key {columntype}")
+                # print(f"index {index} and recordarray {recordarray}, found foreign key {columntype}")
                 widget_value = QComboBox()
 
                 # get the actual records of the foreign table
@@ -96,7 +96,7 @@ class RecordLayout(QGridLayout):
             if fkfound == False:
                 ctype = columntype.split(' ', 1)[0].upper()
                 # print(f"ctype = {ctype}")
-                print(f"index {index} and recordarray {recordarray}")
+                # print(f"index {index} and recordarray {recordarray}")
                 if ctype == "INTEGER":
                     widget_value = QSpinBox()
                     widget_value.setMinimum(-1)

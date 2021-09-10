@@ -475,12 +475,12 @@ class SQLmainwindow(QMainWindow):
 
         # get a Record object for the new record
         newrecord = self.record_layout.processValues()
-        print(f"newrecord with values {newrecord.values}")
+        # print(f"newrecord with values {newrecord.values}")
 
         # create the new record in database and retrieve the new record from database
         records = self.handler.table_add_records(tablename=self.table_selected.name, records=[newrecord])
         record = records[0]
-        print(f"record {newrecord.recordarray}")
+        # print(f"record {newrecord.recordarray}")
 
         # set the selected record to the new record
         self.set_record(record)
@@ -494,7 +494,7 @@ class SQLmainwindow(QMainWindow):
 
         # update the record in database and retrieve the updated record from database
         records = self.handler.table_update_records(tablename=self.table_selected.name, valuepairs=updaterecord.valuepairs, where=updaterecord.primarykey)
-        print(records)
+        # print(records)
         record = records[0]
         
         self.set_record(record)
