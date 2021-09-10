@@ -5,9 +5,6 @@ import sqlite3
 from sqlite3 import Error
 
 from .helpers import (
-    get_localpath,
-    split_complete_path,
-    show_files,
     saveas_file,
     check_existance,
 )
@@ -179,7 +176,7 @@ class Database(object):
         cursor = self.execute_query(query=query)
         description = cursor.description
         # print(description)
-        
+
         # print(description)
         columns = []
         for record in description:
@@ -236,7 +233,7 @@ class Database(object):
             column_line = ', '.join(columns)
         
         parameters = tuple()
-        
+
         # where can be collected as [[column name, [values]], [column name2, [values2]]]
         # print(f"where {where}")
         if where == []:
