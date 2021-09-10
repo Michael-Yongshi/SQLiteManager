@@ -2,10 +2,9 @@
 Use a convenient SQLiteHandler object to manipulate SQLite(3) databases.
 
 ## Version
-### 0.5.2
+### 0.5.3
 - Removed some print statements that clutter the terminal during debugging
 - removed some redundent import statements
-- added dependency on sqlite3
 
 ### 0.5.0
 - Added test_gui for testing the library
