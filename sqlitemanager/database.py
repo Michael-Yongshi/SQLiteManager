@@ -20,13 +20,13 @@ class Database(object):
 
         self.connection = None
         self.tables = {}
-        
+
         existance = check_existance(path=path, filename=filename)
         self.connect_database()
 
         if existance == True:
             print(f"Database with path {path} and filename {filename} already exists, connection opened to existing database")
-            
+
         else:
             print(f"Database with path {path} and filename {filename} could not be found, connection opened to new database")
 
@@ -45,7 +45,7 @@ class Database(object):
 
         if existance == True:
             print(f"Database with path {path} and filename {filename} already exists, saving canceled!")
-            
+
         else:
             print(f"Database with path {path} and filename {filename} is free, saving database to the new file")
 
@@ -92,7 +92,7 @@ class Database(object):
         print(f"table {table.name} deleted and removed from table list!")
 
     def delete_records(self, table, records):
-        
+
         parameters = []
         for record in records:
             parameters += [record.primarykey]
@@ -116,10 +116,10 @@ class Database(object):
         cursor = self.connection.cursor()
 
         try:
-            print(f"--------------------\n{query}\n")
+            # print(f"--------------------\n{query}\n")
             cursor.execute(query)
             self.connection.commit()
-            print("Success!\n--------------------")
+            # print("Success!\n--------------------")
 
             return cursor
 
@@ -147,11 +147,11 @@ class Database(object):
         cursor = self.connection.cursor()
 
         try:
-            print(f"--------------------query\n{query}\n")
-            print(f"--------------------parameters\n{parameters}\n")
+            # print(f"--------------------query\n{query}\n")
+            # print(f"--------------------parameters\n{parameters}\n")
             cursor.execute(query, parameters)
             self.connection.commit()
-            print("Success!\n--------------------")
+            # print("Success!\n--------------------")
 
             return cursor
 
