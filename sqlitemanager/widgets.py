@@ -1,49 +1,23 @@
-import datetime
 
 from PyQt5.QtCore import (
     Qt,
-    pyqtSignal,
-    QDate,
-    QDateTime,
-    QVariant,
     )
 
 from PyQt5.QtWidgets import (
-    QAction,
-    QApplication,
     QCheckBox,
     QComboBox,
-    QDateEdit,
-    QDateTimeEdit,
     QDialog,
     QDialogButtonBox,
     QFormLayout,
     QFrame,
     QGridLayout,
-    QHBoxLayout,
-    QInputDialog,
     QLabel,
     QLineEdit,
-    QListWidget,
-    QListWidgetItem,
-    QMainWindow,
-    QMessageBox,
-    QProgressBar,
     QPushButton, 
-    QSizePolicy,
     QSpinBox,
     QTextEdit,
     QVBoxLayout,
-    QWidget, 
     )
-
-from PyQt5.QtGui import (
-    QFont,
-    QFontDatabase,
-    QIcon,
-    )
-
-from sqlitemanager.handler import SQLiteHandler
 
 
 class RecordLayout(QGridLayout):
