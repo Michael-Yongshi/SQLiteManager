@@ -2,6 +2,14 @@
 Use a convenient SQLiteHandler object to manipulate SQLite(3) databases.
 
 ## Version
+### 0.5.2
+- Removed some print statements that clutter the terminal during debugging
+- removed some redundent import statements
+- added dependency on sqlite3
+
+### 0.5.0
+- Added test_gui for testing the library
+
 ### 0.3.x
 - Adds handler.py with a SQLiteHandler object
 - moves support methods to helpers.py
