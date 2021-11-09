@@ -117,6 +117,13 @@ crossref_table = handler.crossref_create(
 )
 print(f"Database contains {handler.database.tables}")
 
+# getting a crossref table
+crossref_table = handler.crossref_get(
+    tablename1="scientists",
+    tablename2="papers",
+)
+print(f"Crossref table is {crossref_table}")
+
 # get crossreferences
 crossreferences = handler.crossref_get_all(tablename="scientists")
 print(f"Table scientists has links to:")
