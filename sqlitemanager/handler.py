@@ -311,6 +311,32 @@ class SQLiteHandler(object):
 
         return crossref_table
 
+    def crossref_get(self, tablename1, tablename2):
+        """
+        Gets a crossreference table for tables with given table names if it exists.
+        will check first the following combination
+        'CROSSREF_tablename1_tablename2'
+        and if table is not found will check
+        'CROSSREF_tablename2_tablename1'
+
+        Returns the table if it is found
+        """
+
+        crossref_nominal = 'CROSSREF_' + tablename1 + '_' + tablename2
+        crossref_inverse = 'CROSSREF_' + tablename2 + '_' + tablename1
+        # print(crossref_nominal)
+        # print(crossref_inverse)
+
+        try:
+            crossref = self.database.get_table(crossref_nominal)
+            # print(f"crossref nominal found with {crossref}")
+
+        except:
+            crossref = self.database.get_table(crossref_inverse)
+            # print(f"crossref inverse found with {crossref}")
+        
+        return crossref
+
     def crossref_get_all(self, tablename):
         """
         loops over all the tables in the database.
@@ -332,6 +358,7 @@ class SQLiteHandler(object):
 
         return tables       
 
+#Depreciated
     def crossref_get_one(self, tablename1, tablename2):
         """
         loops over all the tables in the database.
@@ -368,7 +395,7 @@ class SQLiteHandler(object):
         """
 
         # get the cross reference table
-        crossref = self.crossref_get_one(
+        crossref = self.crossref_get(
             tablename1 = tablename1,
             tablename2 = tablename2, 
             )
