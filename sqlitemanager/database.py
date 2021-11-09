@@ -101,11 +101,9 @@ class Database(object):
         self.execute_parameterised_query(query, parameters)
 
     def get_table(self, tablename):
-
-        for table in self.tables:
-            if table.name == tablename:
-                retrieved_table = table
-                break
+        
+        retrieved_table = self.tables[tablename]
+        print(retrieved_table)
 
         return retrieved_table
 
