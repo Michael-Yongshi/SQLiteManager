@@ -12,7 +12,7 @@ handler.database_open(filename="science")
 handler.database_delete()
 handler.database_new(filename="science")
 
-# add a table
+# add a table (note that the primary key and name column are always automatically created)
 handler.table_create(
     tablename="scientists",
         column_names = ["age", "gender_id"],
