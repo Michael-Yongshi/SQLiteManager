@@ -130,13 +130,14 @@ class Database(object):
         this results in '?, ?, ?'
 
         meaning
-        for each (_ denotes an unused variable) in parameters, join the strings ('?') with a comma and a space (', ') in order to not have to remove a trailing comma
+        for each ('_' denotes an unused variable) in parameters, join a string ('?') with a comma and a space (', ')
+        this leaves question marks seperated by a comma space in between that SQL will expect
 
         then merge with query
         -query= 'SELECT name FROM students WHERE id IN (%s)' % placeholders
 
         meaning
-        this replaces the "%s with our placeholders ('?, ?, ?' in our case)
+        this replaces the '%s' with our placeholders ('?, ?, ?' in our case)
         """
 
         cursor = self.connection.cursor()
