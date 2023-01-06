@@ -36,22 +36,23 @@ def show_files(path):
         
     # Iterate over sqlite files
     for filename in os.listdir(path):
-        if filename.endswith(".sqlite"): 
+        if filename.endswith(".sqlite*"): 
             name = os.path.splitext(filename)[0]
             filelist.append(name)
 
     return path, filelist
 
-def saveas_file(srcfile, dstfile, srcpath, dstpath, extension = ".sqlite"):
+def saveas_file(srcfile, dstfile, srcpath, dstpath, extension):
 
-    srcfile = srcfile + extension
-    dstfile = dstfile + extension
+    src = os.path.join(srcpath, srcfile + extension)
+    dst = os.path.join(dstpath, dstfile + extension)
 
-    src = os.path.join(srcpath, srcfile)
-    dst = os.path.join(dstpath, dstfile)
+    if os.path.isfile(src):
 
-    if os.path.exists(src):
-        if os.path.exists(dst):
+        if os.path.exists(dstpath) == False:
+            os.makedirs(dstpath)
+
+        if os.path.isfile(dst):
             print(f"error path destination: {dst} already exists")
 
         else:
@@ -60,13 +61,3 @@ def saveas_file(srcfile, dstfile, srcpath, dstpath, extension = ".sqlite"):
 
     else:
         print(f"Source path does not exist: {src}")
-
-def check_existance(filename, path, extension = ".sqlite"):
-
-    destination = os.path.join(path, filename + extension)
-    if os.path.exists(destination):
-        # print(f"destination: {destination} already exists")
-        return True
-    else:
-        # print(f"destination: {destination} doesnt exist")
-        return False

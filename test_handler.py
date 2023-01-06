@@ -8,9 +8,10 @@ def print_records(records):
 
 # connect to database
 handler = SQLiteHandler()
-handler.database_open(filename="science")
-handler.database_delete()
-handler.database_new(filename="science")
+handler.filename = "science"
+handler.extension = ".sqlite3"
+handler.database_new()
+handler.database_open()
 
 # add a table (note that the primary key and name column are always automatically created)
 handler.table_create(
@@ -204,5 +205,15 @@ for records in recordset:
     print("")
     print_records(records)
 
-# clean up by closing database
+# clean up by closing and deleting the database
+dest_path = handler.path + "/science"
+dest_file = "science_copy"
+
+copy = handler.database_saveas(filename=dest_file, path=dest_path)
 handler.database_close()
+
+handler.filename=dest_file
+handler.path=dest_path
+handler.database_open()
+
+handler.check_database_info()
