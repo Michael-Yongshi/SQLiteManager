@@ -648,4 +648,6 @@ class SQLiteHandler(object):
 
     def get_complete_path(self):
         
-        return os.path.join(self.path, self.filename + self.extension)
+        complete_path = os.path.join(self.path, self.filename + self.extension)
+        print(f"complete_path is {complete_path}")
+        return complete_path
