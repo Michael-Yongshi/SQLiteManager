@@ -1,70 +1,112 @@
+import os
+
 from .database import (
     Database,
     Table,
     Record,
     )
 from .helpers import (
-    get_localpath,
-    check_existance,
+    saveas_file,
 )
 
 class SQLiteHandler(object):
-    def __init__(self, filename="", path=""):
+    def __init__(self, path="", filename="", extension=""):
         
+        self.path = path if path != "" else os.getcwd()
+        self.extension = extension if extension != "" else ".sqlite3"
+        self.filename = filename
         self.database = None
+
+        print(f"Path is set to {self.path}")
+        print(f"Filename is set to {self.filename}")
+        print(f"File extension set to {self.extension}")
+
+        # if filename is given, try to open the database directly
         if filename != "":
-            if path == "":
-                path = get_localpath()
-            
-            self.database_init(filename = filename, path = path)
+            self.database_open()
 
-    def database_init(self, filename, path):
-        # try:
-        self.database = Database(
-            filename=filename,
-            path=path,
-        )
-        
-        # except:
-        #     print(f"Couldn't initialize database!")
-
-    def database_new(self, filename, path=""):
-        """
-        initialises database only if it doesnt exist yet
-        """
-        if path == "":
-            path = get_localpath()
-
-        exists = check_existance(filename, path)
-
-        if exists == True:
-            print(f"Couldnt create database, database with filename {filename} at directory {path} already exists!")
         else:
-            self.database_init(filename=filename, path=path)
+            print("No database connected yet")
 
-    def database_saveas(self, filename, path=""):
-        self.database.saveas_database(filename=filename, path=path)
+    def check_database_info(self):
+        """
+        prints database location variables
+        returns [self.path, self.filename, self.extension]
+        """
 
-    def database_open(self, filename, path=""):
+        print(f"Location handler points to is at path: {self.path}, with filename: {self.filename} and extension: {self.extension}")
+        if self.database.get_complete_path() == self.get_complete_path():
+            print(f"Current loaded database is at this location as well!")
+        else:
+            print(f"Current loaded database is at a different location: {self.database.get_complete_path()}")
+
+    def database_initialize(self):
+        """
+        Makes sure a database is initialized, if it doesnt exist it creates one.
+
+        Returns path, filename and extension if at least one of them is empty
+        """
+
+        if self.path == "" or self.filename == "" or self.extension == "":
+            print(f"Couldn't initialize database")
+
+            return self.check_database_info()
+
+        if self.check_existance() == True:
+            self.database_open()
+        else:
+            self.database_new()
+
+    def database_new(self):
+        """
+        Create a new database at location
+        """
+
+        if self.check_existance() == True:
+            print(f"Couldnt create database, database with filename {self.filename} at directory {self.path} already exists!")
+        else:
+
+            # check if directory already exists, if not create it
+            if not os.path.exists(self.path):
+                os.makedirs(self.path)
+
+            # If we now set the database, sqlite will create a new one
+            self.database_set()
+
+    def database_open(self):
         """
         initialises database only if it already exists
         """
 
-        if path == "":
-            path = get_localpath()
-
-        exists = check_existance(filename, path)
-
-        if exists == True:
-            self.database_init(filename=filename, path=path)
+        if self.check_existance() == True:
+            self.database_set()
             
             # pull all sql tables and records
             self.database_open_tables()
 
         else:
-            print(f"Couldnt open database, database with filename {filename} at directory {path} doesn't exist!")
+            print(f"Couldnt open database, database with filename {self.filename + self.extension} at directory {self.path} doesn't exist!")
+
+    def database_set(self):
+        """
+        Sets the database variable to the location of the database
+        """
+
+        if self.extension[0] == ".":
+
+            self.database = Database(
+                filename=self.filename,
+                path=self.path,
+                extension=self.extension,
+            )
+
+        else:
+            print(f"self.extension ({self.extension}) does not start with a dot, check if its a valid extension")
 
     def database_close(self):
+        """
+        Closes connection to the database if connected to one
+        """
 
         if self.database != None:
             self.database.close_database()
@@ -72,11 +114,38 @@ class SQLiteHandler(object):
         else:
             print(f"Couldn't close database, not connected to one!")
 
+    def database_saveas(self, filename, path=""):
+        """
+        Saves the database to the new location if it doesnt exists yet
+        It returns a database object that can be set to self.database if you want to continue working in the new file
+
+        It will cancel if target file already exists, to overwrite delete the existing file
+        """
+
+        path = path if path != "" else self.path
+
+        saveas_file(
+            srcfile = self.filename, 
+            dstfile = filename,
+            srcpath = self.path,
+            dstpath = path,
+            extension = self.extension,
+            )
+
     def database_delete(self):
-        
+        """
+        Deletes database and removes pointer to it if connected to one.
+        """
+
         if self.database != None:
-            self.database.delete_database()
+
+            self.database.connection.close()
             self.database = None
+
+            os.remove(self.get_complete_path())
+
+            print(f"Database deleted!")
+
         else:
             print(f"Couldn't delete database, not connected to one!")
 
@@ -115,7 +184,7 @@ class SQLiteHandler(object):
         """
         By default a table will have
         - ordering: to denote a desired order of the records, by default mirrors id column
-        - name: a readable reference of this record, preferably will be unique, but is not mandatory
+        - name: a readable reference of this record, preferably will be unique, but != mandatory
 
         so put only extra columns on top of these in the column names with a desired type. 
         If they are not given at all the table will have only the columns:
@@ -316,7 +385,7 @@ class SQLiteHandler(object):
         Gets a crossreference table for tables with given table names if it exists.
         will check first the following combination
         'CROSSREF_tablename1_tablename2'
-        and if table is not found will check
+        and if table != found will check
         'CROSSREF_tablename2_tablename1'
 
         Returns the table if it is found
@@ -569,3 +638,16 @@ class SQLiteHandler(object):
 
         # otherwise, no transform is needed
         return where
+
+    def check_existance(self):
+
+        if os.path.exists(self.get_complete_path()):
+            return True
+        else:
+            return False
+
+    def get_complete_path(self):
+        
+        complete_path = os.path.join(self.path, self.filename + self.extension)
+        print(f"complete_path is {complete_path}")
+        return complete_path

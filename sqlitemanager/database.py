@@ -4,72 +4,25 @@ import datetime
 import sqlite3
 from sqlite3 import Error
 
-from .helpers import (
-    saveas_file,
-    check_existance,
-)
-
 class Database(object):
-    def __init__(self, filename, path):
+    def __init__(self, filename, path, extension):
 
         self.filename = filename
         self.path = path
+        self.extension = extension
 
         self.connection = None
         self.tables = {}
 
-        existance = check_existance(path=path, filename=filename)
         self.connect_database()
 
-        if existance == True:
-            print(f"Database with path {path} and filename {filename} already exists, connection opened to existing database")
-
-        else:
-            print(f"Database with path {path} and filename {filename} could not be found, connection opened to new database")
-
-    def delete_database(self):
-
-        self.connection.close()
-
-        completepath = os.path.join(self.path, self.filename + ".sqlite")
-        os.remove(completepath)
-
-        print(f"Database deleted!")
-
-    def saveas_database(self, filename, path):
-
-        existance = check_existance(path=path, filename=filename)
-
-        if existance == True:
-            print(f"Database with path {path} and filename {filename} already exists, saving canceled!")
-
-        else:
-            print(f"Database with path {path} and filename {filename} is free, saving database to the new file")
-
-            saveas_file(
-                srcfile = self.filename, 
-                dstfile = filename,
-                srcpath = self.path,
-                dstpath = path,
-                )
-
-            new_database = Database(
-                filename=filename, 
-                path=path,
-            )
-
-            return new_database
-
     def connect_database(self):
-
+        """
+        Try to connect to the database in question, if it doesnt exist it will be created
+        """
+        
         try:
-            destination = os.path.join(self.path, f"{self.filename}.sqlite")
-
-            # check if directory already exists, if not create it
-            if not os.path.exists(self.path):
-                os.makedirs(self.path)
-
-            self.connection = sqlite3.connect(destination)
+            self.connection = sqlite3.connect(self.get_complete_path())
             print("Connection to SQLite DB successful")
 
         except Error as e:
@@ -78,6 +31,13 @@ class Database(object):
 
     def close_database(self):
         self.connection.close()
+
+    def get_complete_path(self):
+        """
+        returns a complete path of the known path, filename and extension
+        """
+        
+        return os.path.join(self.path, self.filename + self.extension)
 
     def delete_table(self, table):
 

@@ -2,6 +2,18 @@
 Use a convenient SQLiteHandler object to manipulate SQLite(3) databases.
 
 ## Version
+
+### 0.6.1
+- extra logging for printing path
+
+### 0.6.0
+- Extension type can be given to the handler to discern between .sqlite and .sqlite3
+- changed many functions to depend on the location variables of the handler class (path, filename, extension)
+make sure the extension variable does not miss the dot!
+- removed redundent steps or functions, mostly from the database class and added to the handler
+- added some more comments for functions
+- other fixes
+
 ### 0.5.3
 - Removed some print statements that clutter the terminal during debugging
 - removed some redundent import statements
@@ -24,6 +36,9 @@ pip install sqlitemanager
 ## How to
 Primarily use the handler to do database manipulation for you instead of directly edit the data objects. The handler is built to make manipulation of the objects even simpler. See the test_gui.py file for a complete example of how to use the SQLiteHandler.
 https://github.com/Michael-Yongshi/SQLiteManager/blob/master/test_gui.py
+
+The sqlite handler is aware of the working directory, if paths are not given it will work from the current working directory.
+It prints the paths its using, so watch closely that its called from the correct one.
 
 ## Tests
 Run test_handler.py in order to test the package.
