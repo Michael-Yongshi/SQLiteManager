@@ -9,7 +9,6 @@ def print_records(records):
 # connect to database
 handler = SQLiteHandler()
 handler.filename = "science"
-handler.extension = ".sqlite3"
 handler.database_new()
 handler.database_open()
 

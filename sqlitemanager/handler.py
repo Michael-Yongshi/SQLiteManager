@@ -92,11 +92,16 @@ class SQLiteHandler(object):
         Sets the database variable to the location of the database
         """
 
-        self.database = Database(
-            filename=self.filename,
-            path=self.path,
-            extension=self.extension,
-        )
+        if self.extension[0] == ".":
+
+            self.database = Database(
+                filename=self.filename,
+                path=self.path,
+                extension=self.extension,
+            )
+
+        else:
+            print(f"self.extension ({self.extension}) does not start with a dot, check if its a valid extension")
 
     def database_close(self):
         """
