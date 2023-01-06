@@ -2,6 +2,15 @@
 Use a convenient SQLiteHandler object to manipulate SQLite(3) databases.
 
 ## Version
+
+### 0.6.0
+- Extension type can be given to the handler to discern between .sqlite and .sqlite3
+- changed many functions to depend on the location variables of the handler class (path, filename, extension)
+make sure the extension variable does not miss the dot!
+- removed redundent steps or functions, mostly from the database class and added to the handler
+- added some more comments for functions
+- other fixes
+
 ### 0.5.3
 - Removed some print statements that clutter the terminal during debugging
 - removed some redundent import statements
