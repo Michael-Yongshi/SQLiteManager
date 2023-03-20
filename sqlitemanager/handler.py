@@ -180,21 +180,38 @@ class SQLiteHandler(object):
                 tableobject = Table(tablename, column_names, column_types, records)
                 self.database.tables.update({tableobject.name: tableobject})
 
-    def table_create(self, tablename, record_name="", column_names=[], column_types=[], column_placements=[], defaults=[]):
+    def table_create(self, tablename, record_name="", column_dict={}, column_names=[], column_types=[], column_placements=[], defaults=[]):
         """
-        By default a table will have
-        - ordering: to denote a desired order of the records, by default mirrors id column
-        - name: a readable reference of this record, preferably will be unique, but != mandatory
 
-        so put only extra columns on top of these in the column names with a desired type. 
+        column names and types can be given in a dict of form
+        {<column name>: <column_type>}
+        These will convert automatically to the right arrays for certain keywords (not caps sensitive)
+        and can transform these common type terms, like int, integer, str, string, text, character, date, dt, time, year
+        Anyforeign keys have to be put exactly as necessary, as these are not caught
+
         If they are not given at all the table will have only the columns:
         - id
-        - ordering
-        - name
         """
 
-        column_names = ["ordering", "name"] + column_names
-        column_types = ["INTEGER", "VARCHAR(255)"] + column_types
+        if column_dict != {}:
+            column_names = []
+            column_types = []
+
+            for key in column_dict:
+
+                column_type_transform = column_dict[key].upper()
+                if column_type_transform in('INT', 'INTEGER', 'NUMBER'):
+                    column_type = "INTEGER"
+                elif column_type_transform in('STR', 'STRING', 'TXT', 'NUMBER'):
+                    column_type = "TEXT"
+                elif column_type_transform in('DATE', 'DT', 'TIME', 'YEAR'):
+                    column_type = "DATE"
+                else:
+                    # otherwise keep exactly the same
+                    column_type = column_dict[key]
+
+                column_names += [key]
+                column_types += [column_type]
 
         table = self.database.create_table(
                 name=tablename,

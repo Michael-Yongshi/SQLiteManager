@@ -15,20 +15,29 @@ handler.database_open()
 # add a table (note that the primary key and name column are always automatically created)
 handler.table_create(
     tablename="scientists",
-        column_names = ["age", "gender_id"],
-        column_types = ["Integer", "INTEGER REFERENCES genders(id)"],
+        column_names = ["name", "age", "gender_id"],
+        column_types = ["Text", "Integer", "INTEGER REFERENCES genders(id)"],
     )
 print(handler.database.tables)
+
+# adding more tables with column dict
+table_nobel = handler.table_create(
+    tablename = "nobelprizes",
+    column_dict={
+        "name": "string",
+        "description": "str",
+    },
+)
 
 # add some records directly in the database
 handler.table_create_add_records(
     tablename="scientists",
     recordsvalues=[
-        [1, "Hawking", 68, 2],
-        [2, "Marie Curie", 20, 2],
-        [3, "Einstein", 100, 1],
-        [4, "Rosenburg", 78, 1],
-        [5, "Neil dGrasse Tyson", 57, True],
+        ["Hawking", 68, 2],
+        ["Marie Curie", 20, 2],
+        ["Einstein", 100, 1],
+        ["Rosenburg", 78, 1],
+        ["Neil dGrasse Tyson", 57, True],
         ]
     )
 
@@ -58,31 +67,29 @@ records = handler.table_update_records(tablename="scientists", valuepairs=valuep
 print(f"update record 'id = 5'")
 print_records(records)
 
-# adding more tables
-table_nobel = handler.table_create(
-    tablename = "nobelprizes",
-    column_names=["description"],
-    column_types=["TEXT"],
-)
 table_papers = handler.table_create(
     tablename = "papers",
-    column_names=["description"],
-    column_types=["TEXT"],
+    column_dict={
+        "name": "string",
+        "description": "str",
+    },
 )
 table_nobel = handler.table_create(
     tablename = "ignorants",
-    column_names=["description"],
-    column_types=["TEXT"],
+    column_dict={
+        "name": "string",
+        "description": "str",
+    },
 )
 
 # creating multiple records and return them (these are not yet saved in the database)
 records = handler.records_create(
     tablename="nobelprizes",
     recordsvalues=[
-        [1, "Peace", "Peace nobel prize"],
-        [2, "Economy", "Economy nobel prize"],
-        [3, "Physics", "Physics nobel prize"],
-        [4, "Sociology", "Sociology nobel prize"],
+        ["Peace", "Peace nobel prize"],
+        ["Economy", "Economy nobel prize"],
+        ["Physics", "Physics nobel prize"],
+        ["Sociology", "Sociology nobel prize"],
         ]
     )
 # adding these records to the database
@@ -94,10 +101,10 @@ print_records(records)
 records = handler.table_create_add_records(
     tablename="papers",
     recordsvalues=[
-        [1, "Palestine", "Extrapolation on the palestinian cause"],
-        [2, "Wealth", "On the Wealth of Nations"],
-        [3, "Time", "A brief history of time"],
-        [4, "Fear", "Controlling your fear"],
+        ["Palestine", "Extrapolation on the palestinian cause"],
+        ["Wealth", "On the Wealth of Nations"],
+        ["Time", "A brief history of time"],
+        ["Fear", "Controlling your fear"],
         ]
     )
 print(f"creating multiple records")
