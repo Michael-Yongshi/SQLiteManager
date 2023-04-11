@@ -196,6 +196,7 @@ class SQLiteHandler(object):
         if column_dict != {}:
             column_names = []
             column_types = []
+            # column_defaults = []
 
             for key in column_dict:
 
@@ -237,12 +238,17 @@ class SQLiteHandler(object):
         sqlrecords = self.database.read_records(tablename=tablename, columns=table.column_names)
         table.records = self.transform_sql_to_record(column_names=table.column_names, sqlrecords=sqlrecords)
 
-    def table_create_add_records(self, tablename, recordsvalues):
+    def table_create_add_records(self, tablename, recordsvalues=[], recorddicts=[]):
         """
         create records from given values and immediately add records in one go to specified table
         """
 
-        records = self.records_create(tablename, recordsvalues)
+        if recorddicts != []:
+            records = self.records_create(tablename, recorddicts=recorddicts)
+
+        elif recordsvalues != []:
+            records = self.records_create(tablename, recordsvalues=recordsvalues)
+        
         self.table_add_records(tablename, records)
 
         return records
@@ -572,7 +578,7 @@ class SQLiteHandler(object):
 
         return records_found
 
-    def record_create(self, tablename, values=[], recordarray=[]):
+    def record_create(self, tablename, values=[], recordarray=[], recorddict={}):
         """
         creates a draft record that can still be 
         manipulated before making it definitive
@@ -593,6 +599,14 @@ class SQLiteHandler(object):
         elif values != []:
             recordarray = [-1] + values
 
+        elif recorddict != {}:
+            recordarray = [-1]
+            for column_name in table.column_names:
+                try:
+                    values += [recorddict[column_name]]
+                except:
+                    values += []
+
         # if nothing is given, fill the values with default values
         else:
             recordarray = table.defaults
@@ -604,7 +618,7 @@ class SQLiteHandler(object):
         # print(f"created record with recordarray {record.recordarray}")
         return record
 
-    def records_create(self, tablename, recordsvalues):
+    def records_create(self, tablename, recordsvalues =[], recorddicts = []):
         """
         creates multiple draft records that can still be 
         manipulated before making it definitive
@@ -614,8 +628,15 @@ class SQLiteHandler(object):
         """
 
         records = []
-        for values in recordsvalues:
-            records += [self.record_create(tablename, values)]
+
+        if recordsvalues != []:
+
+            for values in recordsvalues:
+                records += [self.record_create(tablename, values=values)]
+
+        elif recorddicts != []:
+            for recorddict in recorddicts:
+                records += [self.record_create(tablename, recorddict=recorddict)]
 
         return records
 

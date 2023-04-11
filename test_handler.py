@@ -36,8 +36,15 @@ handler.table_create_add_records(
         ["Hawking", 68, 2],
         ["Marie Curie", 20, 2],
         ["Einstein", 100, 1],
-        ["Rosenburg", 78, 1],
-        ["Neil dGrasse Tyson", 57, True],
+        ]
+    )
+
+# add some records directly in the database with recorddict
+handler.table_create_add_records(
+    tablename="scientists",
+    recorddicts=[
+        {"name":"Rosenburg", "age": 78, "gender_id": 1,},
+        {"name":"Neil dGrasse Tyson", "age": 57, "gender_id": True,},
         ]
     )
 
