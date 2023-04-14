@@ -108,7 +108,6 @@ class Database(object):
     def saveas(self, filename, path=""):
         """
         Saves the database to the new location if it doesnt exists yet
-        It returns a database object that can be set to self.database if you want to continue working in the new file
 
         It will cancel if target file already exists, to overwrite delete the existing file
         """
@@ -138,12 +137,12 @@ class Database(object):
         Deletes database and removes pointer to it if connected to one.
         """
 
-        if self.database != None:
+        if self.connection != None:
 
             self.connection.close()
             self.connection = None
 
-            os.remove(self.get_complete_path())
+            os.remove(self.complete_path)
 
             logging.info(f"Database deleted!")
 
