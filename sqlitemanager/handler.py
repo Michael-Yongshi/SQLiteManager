@@ -67,10 +67,12 @@ def table_create(db, config_dict):
 
         # transform columns to string format
         valuetext = ",\n".join(columns)
-        logging.warning(f"create table columns {valuetext}")
 
         # create variables text
         query = f"CREATE TABLE IF NOT EXISTS {table_name} (\n{valuetext}\n);"
+
+        logging.warning(f"execute query {query}")
+
         db.execute_query(query)
 
         # tableobject = Table(
@@ -87,12 +89,12 @@ def table_create(db, config_dict):
     
     # return table
 
-# def table_delete(self, tablename):
+def table_delete(db, tablename):
 
-#     table = self.database.tables[tablename]
-#     self.database.delete_table(table=table)
+    query = f"DROP TABLE {tablename}"
+    db.execute_query(query)
 
-#     print(f"table {tablename} deleted")
+    print(f"table {tablename} deleted")
 
 # def load_tables(self):
 #     """
@@ -575,15 +577,6 @@ def table_create(db, config_dict):
 #         return True
 #     else:
 #         return False
-
-# def delete_table(self, table):
-
-#     query = f"DROP TABLE {table.name}"
-#     self.execute_query(query)
-
-#     del self.tables[table.name]
-
-#     print(f"table {table.name} deleted and removed from table list!")
 
 # def delete_records(self, table, records):
 

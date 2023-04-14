@@ -7,44 +7,30 @@ from sqlitemanager import handler
 # connect to database
 db = Database(filename="science")
 
-table_dict_genders = {
-    "genders": {
-        "id": {
-            "column_type": "int",
-            "primary_key": True,
-            "autonumber": True,
-        },
-        "name": {
-            "column_type": "str",
-        }
-    }
-}
+table_dict_gender = {"gender": {
+        "id": {"column_type": "int", "primary_key": True, "autonumber": True},
+        "name": {"column_type": "str",},
+    }}
 
-handler.table_create(db=db, config_dict=table_dict_genders)
+handler.table_create(db=db, config_dict=table_dict_gender)
 
-table_dict_scientists = {
-    "scientists": {
-        "id": {
-            "column_type": "int",
-            "primary_key": True,
-            "autonumber": True,
-        },
-        "name": {
-            "column_type": "str",
-        },
-        "age": {
-            "column_type": "int",
-        },
-        "gender_id": {
-            "column_type": "int",
-            "foreign_key": {
-                "genders":"id"
-            }
-        },
-    }
-}
+table_dict_sex = {"sex": {
+        "id": {"column_type": "int", "primary_key": True, "autonumber": True},
+        "name": {"column_type": "str",},
+    }}
+
+handler.table_create(db=db, config_dict=table_dict_sex)
+
+table_dict_scientists = {"scientist": {
+        "id": {"column_type": "int", "primary_key": True, "autonumber": True},
+        "name": {"column_type": "str"},
+        "age": {"column_type": "int"},
+        "sex_id": {"column_type": "int", "foreign_key": {"sex":"id"}},
+    }}
 
 handler.table_create(db=db, config_dict=table_dict_scientists)
+
+handler.table_delete(db=db, tablename="gender")
 
 db.delete()
 
