@@ -1,16 +1,52 @@
 import logging
 
 from sqlitemanager.database import Database
-
+from sqlitemanager import handler
 
 
 # connect to database
 db = Database(filename="science")
 
+table_dict_genders = {
+    "genders": {
+        "id": {
+            "column_type": "int",
+            "primary_key": True,
+            "autonumber": True,
+        },
+        "name": {
+            "column_type": "str",
+        }
+    }
+}
 
+handler.table_create(db=db, config_dict=table_dict_genders)
 
+table_dict_scientists = {
+    "scientists": {
+        "id": {
+            "column_type": "int",
+            "primary_key": True,
+            "autonumber": True,
+        },
+        "name": {
+            "column_type": "str",
+        },
+        "age": {
+            "column_type": "int",
+        },
+        "gender_id": {
+            "column_type": "int",
+            "foreign_key": {
+                "genders":"id"
+            }
+        },
+    }
+}
 
+handler.table_create(db=db, config_dict=table_dict_scientists)
 
+db.delete()
 
 # def print_records(records):
     
@@ -18,18 +54,6 @@ db = Database(filename="science")
 #         record.print()
 
 
-
-
-
-
-
-# # add a table (note that the primary key and name column are always automatically created)
-# handler.table_create(
-#     tablename="scientists",
-#         column_names = ["name", "age", "gender_id"],
-#         column_types = ["Text", "Integer", "INTEGER REFERENCES genders(id)"],
-#     )
-# print(handler.database.tables)
 
 # # adding more tables with column dict
 # table_nobel = handler.table_create(
