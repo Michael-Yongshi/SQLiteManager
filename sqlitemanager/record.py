@@ -1,20 +1,15 @@
 
 class Record(object):
-    def __init__(self, column_names, values):
+    def __init__(self, dictionary):
         super().__init__()
-
         """
-        primarykey: primary key of this record
         dict: dictionary with key and values
 
         record.print() will print the record to the terminal and return the string printed
         """
 
-        self.column_names = column_names
-        self.values = values
-        self.dict = {}
-        for 
-        self.primarykey = self.dict["id"]
+        self.table = None
+        self.dictionary = dictionary
 
     def print(self):
 

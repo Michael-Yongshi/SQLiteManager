@@ -153,15 +153,14 @@ class Database(object):
         cursor = self.connection.cursor()
 
         try:
-            # print(f"--------------------\n{query}\n")
+            logging.info(query)
             cursor.execute(query)
             self.connection.commit()
-            # print("Success!\n--------------------")
 
             return cursor
 
         except Error as e:
-            print(f"The error '{e}' occurred")
+            logging.warning(f"The error '{e}' occurred")
 
     def execute_parameterised_query(self, query, parameters):
         """
@@ -185,13 +184,11 @@ class Database(object):
         cursor = self.connection.cursor()
 
         try:
-            # print(f"--------------------query\n{query}\n")
-            # print(f"--------------------parameters\n{parameters}\n")
+            logging.info(f"{query}")
             cursor.execute(query, parameters)
             self.connection.commit()
-            # print("Success!\n--------------------")
 
             return cursor
 
         except Error as e:
-            print(f"The error '{e}' occurred")
+            logging.warning(f"The error '{e}' occurred")

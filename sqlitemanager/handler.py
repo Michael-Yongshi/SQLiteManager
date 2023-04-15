@@ -2,25 +2,45 @@ import logging
 
 import os
 
-# from .table import Table
-# from .record import Record
+from .table import Table
+from .record import Record
 
-def table_create(db, config_dict):
+def create_table(db, config_dict, record_dict = {}):
     """
+    Creates a table in the database based on a configuration dictionary (config_dict)
+    
+    the config dict is a nested dict where the table_name is the first key with as value a dict with the column names as keys
+    these columns each have a dict containing the parameters of the columns
 
-    config_dict comes in the form of a dict:
+    config_type is the only mandatory parameter
+    The function will convert automatically the column types to the right SQL query parameters for certain keywords (not caps sensitive)
+    and can transform these common type terms, like int, integer, number, str, string, txt, text, date, time, dt, datetime
 
-    These will convert automatically to the right arrays for certain keywords (not caps sensitive)
-    and can transform these common type terms, like int, integer, str, string, text, character, date, dt, time, year
-    Anyforeign keys have to be put exactly as necessary, as these are not caught
+    the config dict can be filled with some optional parameters when you want them to be included
 
-    If they are not given at all the table will have only the columns:
-    - id
+    primary_key, autonumber and not_null are simply set to true, like
+    primary_key: True
+    autonumber: True
+    not_null: True
+
+    Defaults need data given
+    column_default: <value>
+
+    Foreign keys can be given by setting the foreign_key with value a dict of the table and column it should point to.
+    foreign_key:{<table>:<column>}
+
+    Optionally you can add already records for tables by adding a list of record dicts to be added immediately after creating the table
+    The record dicts are just a dict where column name is the key and the data is the value
+    {people_table:[
+            {"name":"Fedora","age":300},
+            {"name":"Ubuntu","age":50}
+    }
+    
     """
 
     valuetext = []
 
-    # first is the tablename
+    # first is the table_name
     for table_name in config_dict:
         table_dict = config_dict[table_name]
 
@@ -75,84 +95,270 @@ def table_create(db, config_dict):
 
         db.execute_query(query)
 
-        # tableobject = Table(
-        #     name = name,
-        #     record_name=record_name,
-        #     column_names = column_names,
-        #     column_types = column_types,
-        #     column_placements=[],
-        #     defaults = [],
-        # )
+        table_record_dict = record_dict.get(table_name, "Not Found")
+        if table_record_dict != "Not Found":
+            create_records(db = db, table_name = table_name, records = table_record_dict)
 
-        # self.tables.update({tableobject.name: tableobject})
-    # return tableobject
-    
-    # return table
+def create_records(db, table_name, records):
+    """
+    Insert records into a table
+    records come in the form of a list of record dicts 
+    [
+    {column:value, column2:value},
+    {column:value, column2:value}
+    ]
+    """
 
-def table_delete(db, tablename):
+    for record in records:
+        column_names = []
+        values = []
 
-    query = f"DROP TABLE {tablename}"
+        for column_name in record:
+            column_names += [column_name]
+
+            value = f"'{record[column_name]}'" if isinstance(record[column_name], str) else record[column_name]
+            values += [f"{value}"]
+
+        columns_text = ", ".join(column_names)
+        values_text = ", ".join(values)
+
+        query = f"INSERT INTO {table_name}\n({columns_text})\nVALUES\n({values_text})\n;"
+
+        db.execute_query(query)
+
+def delete_table(db, table_name):
+    """
+    Deleting a table from the database, does not return anything
+    """
+
+    query = f"DROP TABLE {table_name}"
     db.execute_query(query)
 
-    print(f"table {tablename} deleted")
+    logging.warning(f"table {table_name} deleted")
 
-# def load_tables(self):
-#     """
-#     Load tables
-#     """
+def get_table_names(db):
+    """
+    Fetches and returns a list of the tables within the database.
+    Its sorted alphabetically
+    """
 
-#     # clear tables in database variable
-#     self.tables = {}
+    query = "SELECT name FROM sqlite_master WHERE type='table';"
+    cursor = db.execute_query(query=query)
+    data = cursor.fetchall()
 
-#     # get existing tables names
-#     tablenames = self.read_table_names()
-#     tablenames.sort()
-#     logging.info(f"getting tablenames for database {self.filename}")
+    table_names = []
+    for datapoint in data:
+        table_names += [datapoint[0]]
 
-#     # for every table create table object and add to database variable
-#     for tablename in tablenames:
-#         # get metadata for table
-#         metadata = self.read_column_metadata(tablename)
+    table_names.sort()
 
-#         column_order = metadata["column_order"]
-#         column_names = metadata["column_names"]
-#         column_types = self.read_column_types(tablename)
+    return table_names
 
-#         # get records of table
-#         sqlrecords = self.read_records(tablename=tablename, where="")
-#         records = self.transform_sql_to_record(column_names=column_names, sqlrecords=sqlrecords)
-
-#         # create table object and add to tables dict
-#         tableobject = Table(tablename, column_names, column_types, records)
-#         self.tables.update({tableobject.name: tableobject})
-
-# def table_sync(self, tablename):
+def get_table_metadata(db, table_selection=[]):
+    """
+    Fetches information from the database about all or a selection of tables within the database
+    It fetches columns with ordering and types and returns a dict of tables, columns and this metadata.
+    {'scientist': {
+        'id': 
+            {'order': 0, 'type': 'INTEGER'}, 
+        'name': 
+            {'order': 1, 'type': 'TEXT'}, 
+        'age': 
+            {'order': 2, 'type': 'INTEGER'}, 
+        'sex_id': 
+            {'order': 3, 'type': 'INTEGER'}
+        }
+    }
     
-#     table = self.tables[tablename]
-#     sqlrecords = self.read_records(tablename=tablename, columns=table.column_names)
+    if only a single table is requested as string, the result will just be that table dicts contents
+    {
+    'id': 
+        {'order': 0, 'type': 'INTEGER'}, 
+    'name': 
+        {'order': 1, 'type': 'TEXT'}, 
+    'age': 
+        {'order': 2, 'type': 'INTEGER'}, 
+    'sex_id': 
+        {'order': 3, 'type': 'INTEGER'}
+    }
+    """
+    
+    if table_selection == []:
+        table_names = get_table_names(db)
+    elif isinstance(table_selection,str):
+        table_names = [table_selection]
+    else:
+        table_names = table_selection
+
+    tables_dict = {}
+    for table_name in table_names:
+
+        # print(table)
+        cursor = db.execute_query(f"PRAGMA table_info({table_name})")
+        data = cursor.fetchall()
+
+        table_dict = {}
+        for datapoint in data:
+            column_name = datapoint[1]
+            column_order = datapoint[0]
+            column_type = datapoint[2]
+
+            column_dict = {
+                    "order":column_order,
+                    "type":column_type
+                }
+            table_dict.update({column_name:column_dict})
+
+        tables_dict.update({table_name: table_dict})
+
+        logging.info(f"metadata of table {table_name} is {tables_dict}")
+
+    if isinstance(table_selection,str):
+        for key in tables_dict:
+            return tables_dict[key]
+    else:
+        return tables_dict
+
+def get_table_column_names(db, table_selection=[]):
+    """
+    if table selection is a single table as string, it will return a list of columns within this table
+    if the table selection is in list form, even if its a single table, it will return a dict of tables and their columns as value
+    """
+
+    table_metadata = get_table_metadata(db, table_selection=table_selection)
+    if isinstance(table_selection,str):
+        column_names = []
+        for column_name in table_metadata:
+            column_names += [column_name]
+        return column_names
+
+    else:
+        table_column_dict = {}
+        for table_name in table_metadata:
+            column_names = []
+            for column_name in table_metadata[table_name]:
+                column_names += [column_name]
+            table_column_dict.update({table_name:column_names})
+
+        return table_column_dict
+
+def get_tables(db, table_selection=[]):
+    """
+    fetches table objects and returned in a dict
+    {table_name: table_object, table_name2: tableo_bject2}
+
+    if only a single table is requested, the result will just be that table object
+    """
+
+    if table_selection == []:
+        table_names = get_table_names(db)
+    elif isinstance(table_selection,str):
+        table_names = [table_selection]
+    else:
+        table_names = table_selection
+
+    # get metadata for table
+    metadata_dict = get_table_metadata(db, table_selection=table_names)
+
+    # for every table create table object and add to a dict
+    tables_dict = {}
+    for table_name in table_names:
+
+        table_metadata = metadata_dict[table_name]
+        table_records = get_records(db, table_name=table_name)
+
+        table_object = Table(
+            db = db,
+            name = table_name, 
+            metadata = table_metadata,
+            records = table_records,
+            )
+
+        # create table object and add to tables dict
+        tables_dict.update({table_name:table_object})
+
+    if isinstance(table_selection,str):
+        for key in tables_dict:
+            return tables_dict[key]
+    else:
+        return tables_dict
+
+def get_records(db, table_name, columns=[], where = {}):
+    """
+    fetches a selection of records of a table with optionally a selection of the columns and a where clause
+
+    column selection is just an array of the column names
+    where can be collected as {column name: {values:[]}, column name2: {values:[]}}
+    """
+
+    query = f"SELECT "
+
+    if columns == []:
+        column_line = "*"
+        column_names = get_table_column_names(db=db, table_selection=table_name)
+    else:
+        column_line = ", ".join(columns)
+        column_names = columns
+    query += column_line
+
+    # TODO, parameters have to be added seperately for a parameterised query
+    parameters = tuple()
+    whereline = ""
+    if where != {}:
+        whereline += "WHERE "
+        for statement in where:
+            parameters += tuple(statement[1])
+
+            whereline += f"{statement[0]}"
+            whereline += " IN ("
+            whereline += ", ".join("?" for _ in statement[1])
+            whereline += ") AND "
+        whereline = whereline[:-5]
+        # print(f"whereline {whereline}")
+    # print(f"parameters = {parameters}")
+
+    query = f"SELECT {column_line} from {table_name} {whereline}"
+    cursor = db.execute_parameterised_query(query, parameters)
+    sqlrecords = (cursor.fetchall())
+
+    logging.warning(sqlrecords)
+
+    records = []
+    for sqlrecord in sqlrecords:
+        record_dict = dict(zip(column_names, sqlrecord))
+        record_object = Record(dictionary=record_dict)
+        records += [record_object]
+
+    return records
+
+
+# def table_sync(self, table_name):
+    
+#     table = self.tables[table_name]
+#     sqlrecords = self.read_records(table_name=table_name, columns=table.column_names)
 #     table.records = self.transform_sql_to_record(column_names=table.column_names, sqlrecords=sqlrecords)
 
-# def table_create_add_records(self, tablename, recordsvalues=[], recorddicts=[]):
+# def table_create_add_records(self, table_name, recordsvalues=[], recorddicts=[]):
 #     """
 #     create records from given values and immediately add records in one go to specified table
 #     """
 
 #     if recorddicts != []:
-#         records = self.records_create(tablename, recorddicts=recorddicts)
+#         records = self.records_create(table_name, recorddicts=recorddicts)
 
 #     elif recordsvalues != []:
-#         records = self.records_create(tablename, recordsvalues=recordsvalues)
+#         records = self.records_create(table_name, recordsvalues=recordsvalues)
     
-#     self.table_add_records(tablename, records)
+#     self.table_add_records(table_name, records)
 
 #     return records
 
-# def table_add_records(self, tablename, records):
+# def table_add_records(self, table_name, records):
 
-#     table = self.database.tables[tablename]
+#     table = self.database.tables[table_name]
 
 #     # get current last row
-#     lastrow = self.table_max_row(tablename)
+#     lastrow = self.table_max_row(table_name)
 
 #     # add the records to the table in the database
 #     self.database.add_records(
@@ -161,10 +367,10 @@ def table_delete(db, tablename):
 #     )
 
 #     # refresh tableobjects records
-#     self.table_sync(tablename)
+#     self.table_sync(table_name)
 
 #     # get last row after update
-#     newlastrow = self.table_max_row(tablename)
+#     newlastrow = self.table_max_row(table_name)
 
 #     # get all the just created rows (in an array lastrow of 1 is the 2nd record, so using lastrow number gets the record after the actual last row)
 #     records = table.records[lastrow:newlastrow]
@@ -174,7 +380,7 @@ def table_delete(db, tablename):
 
 #     return records
 
-# def table_update_records(self, tablename, valuepairs, where):
+# def table_update_records(self, table_name, valuepairs, where):
 #     """
 #     update specific records of the specified table
 
@@ -185,7 +391,7 @@ def table_delete(db, tablename):
 
 #     where = self.transform_where(where=where)
 
-#     records_to_be_updated = self.table_read_records(tablename, where=where)
+#     records_to_be_updated = self.table_read_records(table_name, where=where)
 
 #     ids_to_be_updated = []
 #     for record in records_to_be_updated:
@@ -194,41 +400,41 @@ def table_delete(db, tablename):
 
 #     # the actual updating
 #     self.database.update_records(
-#         tablename=tablename, 
+#         table_name=table_name, 
 #         valuepairs = valuepairs,
 #         where=where,
 #     )
 
 #     # refresh table records
-#     self.table_sync(tablename)
+#     self.table_sync(table_name)
 
 #     print(f"ids to be updated {ids_to_be_updated}")
 #     # read updated records from primary key list
-#     records = self.table_read_records(tablename, where=ids_to_be_updated)
+#     records = self.table_read_records(table_name, where=ids_to_be_updated)
 
 #     return records
 
-# def table_read_records(self, tablename, where=[]):
+# def table_read_records(self, table_name, where=[]):
 
-#     table = self.database.tables[tablename]
+#     table = self.database.tables[table_name]
 
 #     if where == []:
 #         records = table.records
 #     else:
-#         sqlrecords = self.database.read_records(tablename=tablename, columns=table.column_names, where=where)
+#         sqlrecords = self.database.read_records(table_name=table_name, columns=table.column_names, where=where)
 #         records = self.transform_sql_to_record(column_names=table.column_names, sqlrecords=sqlrecords)
 #         # print(f"{self.name} records retrieved: {self.records}")
 
 #     return records
 
-# def table_get_foreign_table(self, tablename, column):
+# def table_get_foreign_table(self, table_name, column):
 #     """
 #     for a particular tableobject and column,
 #     checks if column is a foreign key
 #     if so finds the table it points to
 #     """
 
-#     table = self.database.tables[tablename]
+#     table = self.database.tables[table_name]
 
 #     # check if the column points to a foreign key
 #     columnindex = table.column_names.index(column)
@@ -245,7 +451,7 @@ def table_delete(db, tablename):
 
 #     return foreign_table
 
-# def table_get_foreign_records(self, tablename, column, where=[]):
+# def table_get_foreign_records(self, table_name, column, where=[]):
 #     """
 #     for a particular tableobject and column,
 #     checks if column is a foreign key
@@ -254,62 +460,62 @@ def table_delete(db, tablename):
 #     records will be returned as an array of record objects
 #     """
 
-#     foreign_table = self.table_get_foreign_table(tablename=tablename, column=column)
+#     foreign_table = self.table_get_foreign_table(table_name=table_name, column=column)
     
 #     # get the records from the foreign table
 #     records = self.table_read_records(foreign_table.name)
 #     # print(f"record objects of foreign table {records}")
 
 #     # get the foreign keys to filter on
-#     # records = self.table_read_records(tablename=tablename, where=where)
+#     # records = self.table_read_records(table_name=table_name, where=where)
 #     # foreign_keys = []
 #     # for record in records:
 #     #     foreign_keys += [record.recorddict[column]]
 
 #     return records
 
-# def table_delete_records(self, tablename, where=[]):
+# def table_delete_records(self, table_name, where=[]):
 
-#     table = self.database.tables[tablename]
+#     table = self.database.tables[table_name]
 
 #     where = self.transform_where(where=where)
 
-#     records = self.table_read_records(tablename=tablename, where=where)
+#     records = self.table_read_records(table_name=table_name, where=where)
 #     self.database.delete_records(table=table, records=records)
 
-#     self.table_sync(tablename)
+#     self.table_sync(table_name)
 
-# def table_max_row(self, tablename):
-#     lastrow = self.database.get_max_row(tablename)
+# def table_max_row(self, table_name):
+#     lastrow = self.database.get_max_row(table_name)
 #     return lastrow
 
-# def crossref_create(self, tablename1, tablename2):
+# def crossref_create(self, table_name1, table_name2):
 #     """
 #     Creates a crossreference table for tables with given table names.
 #     Next to the columns that contain the foreign keys, a column for a description is made for additional info.
 #     """
 
 #     crossref_table = self.table_create(
-#         tablename = f"CROSSREF_{tablename1}_{tablename2}",
-#         column_names=[f"{tablename1}_id", f"{tablename2}_id", "description"],
-#         column_types=[f"INTEGER REFERENCES {tablename1}(id)", f"INTEGER REFERENCES {tablename2}(id)", "TEXT"],
+#         table_name = f"CROSSREF_{table_name1}_{table_name2}",
+#         column_names=[f"{table_name1}_id", f"{table_name2}_id", "description"],
+#         column_types=[f"INTEGER REFERENCES {table_name1}(id)", f"INTEGER REFERENCES {table_name2}(id)", "TEXT"],
 #     )
 
 #     return crossref_table
 
-# def crossref_get(self, tablename1, tablename2):
+# def crossref_get(self, table_name1, table_name2):
 #     """
 #     Gets a crossreference table for tables with given table names if it exists.
 #     will check first the following combination
-#     "CROSSREF_tablename1_tablename2"
+#     "CROSSREF_table_name1_table_name2"
 #     and if table != found will check
-#     "CROSSREF_tablename2_tablename1"
+#     "CROSSREF_table_name2_table_name1"
 
 #     Returns the table if it is found
 #     """
 
-#     crossref_nominal = "CROSSREF_" + tablename1 + "_" + tablename2
-#     crossref_inverse = "CROSSREF_" + tablename2 + "_" + tablename1
+#     crossref_nominal = "CROSSREF_" + table_name1 + "_" + table_name2
+#     crossref_inverse = "CROSSREF_" + table_name2 + "_" + table_name1
 #     # print(crossref_nominal)
 #     # print(crossref_inverse)
 
@@ -323,10 +529,10 @@ def table_delete(db, tablename):
     
 #     return crossref
 
-# def crossref_get_all(self, tablename):
+# def crossref_get_all(self, table_name):
 #     """
 #     loops over all the tables in the database.
-#     If they start with CROSSREF, checks if the name contains this tablename.
+#     If they start with CROSSREF, checks if the name contains this table_name.
 #     if they do, find also the table it points to
 #     get an array of all the found tables and return it
 #     """
@@ -334,9 +540,9 @@ def table_delete(db, tablename):
 #     tables = []
 
 #     for key in self.database.tables:
-#         if ("CROSSREF" in key) and (tablename in key):
+#         if ("CROSSREF" in key) and (table_name in key):
 #             key = key.replace("CROSSREF", "")
-#             key = key.replace(tablename, "")
+#             key = key.replace(table_name, "")
 #             key = key.replace("_", "")
 
 #             table = self.database.tables[key]
@@ -345,21 +551,21 @@ def table_delete(db, tablename):
 #     return tables       
 
 # #Depreciated
-# def crossref_get_one(self, tablename1, tablename2):
+# def crossref_get_one(self, table_name1, table_name2):
 #     """
 #     loops over all the tables in the database.
 #     If they start with CROSSREF and contain both the table names, find the table it points to
 #     return the found table
 #     """
 
-#     for tablename in self.database.tables:
-#         if ("CROSSREF" in tablename) and (tablename1 in tablename) and (tablename2 in tablename):
-#             table = self.database.tables[tablename]
+#     for table_name in self.database.tables:
+#         if ("CROSSREF" in table_name) and (table_name1 in table_name) and (table_name2 in table_name):
+#             table = self.database.tables[table_name]
 #             break
 
 #     return table
 
-# def crossref_add_record(self, tablename1, tablename2, where1, where2, description=""):
+# def crossref_add_record(self, table_name1, table_name2, where1, where2, description=""):
 #     """
 #     adds a crossreference between tables 1 and 2 for the rows given by the where statements.
 #     Creates links for any combination of the found rows of table1 and table 2. So if the where statements point to multiple rows,
@@ -382,8 +588,8 @@ def table_delete(db, tablename):
 
 #     # get the cross reference table
 #     crossref = self.crossref_get(
-#         tablename1 = tablename1,
-#         tablename2 = tablename2, 
+#         table_name1 = table_name1,
+#         table_name2 = table_name2, 
 #         )
 
 #     # print(f"where1 is {where1}")
@@ -393,7 +599,7 @@ def table_delete(db, tablename):
 #     else:
 #         rowids1 = []
 #         records = self.table_read_records(
-#             tablename = tablename1,
+#             table_name = table_name1,
 #             where = where1,
 #         )
 #         for record in records:
@@ -406,7 +612,7 @@ def table_delete(db, tablename):
 #     else:
 #         rowids2 = []
 #         records = self.table_read_records(
-#             tablename = tablename2,
+#             table_name = table_name2,
 #             where = where2,
 #         )
 #         for record in records:
@@ -414,18 +620,18 @@ def table_delete(db, tablename):
 #     # print(f"rowids2 is {rowids2}")
 
 #     # determine if tables need to be switched places
-#     index1 = crossref.name.find(tablename1)
-#     index2 = crossref.name.find(tablename2)
+#     index1 = crossref.name.find(table_name1)
+#     index2 = crossref.name.find(table_name2)
 
 #     if (index1 == -1) or (index2 == -1):
-#         print(f"table1 {tablename1} or table2 {tablename2} not found")
+#         print(f"table1 {table_name1} or table2 {table_name2} not found")
 #         return
 
 #     # switch columns
 #     values1 = rowids1 if index1 < index2 else rowids2
 #     values2 = rowids2 if index1 < index2 else rowids1
 
-#     lastrow = self.table_max_row(tablename=crossref.name)
+#     lastrow = self.table_max_row(table_name=crossref.name)
 
 #     records = []
 #     for value1 in values1:
@@ -435,7 +641,7 @@ def table_delete(db, tablename):
 #                 description = f"Cross referenced {where1} to {where2}"
 
 #             record = self.record_create(
-#                 tablename=crossref.name,
+#                 table_name=crossref.name,
 #                 values=[
 #                     lastrow + 1, f"{value1}-{value2}", value1, value2, description
 #                 ]
@@ -444,19 +650,19 @@ def table_delete(db, tablename):
 
 #     self.table_add_records(crossref.name, records)
 
-# def crossref_read_records(self, tablename1, tablename2):
+# def crossref_read_records(self, table_name1, table_name2):
 
-#     table = self.crossref_get_one(tablename1=tablename1, tablename2=tablename2)
+#     table = self.crossref_get_one(table_name1=table_name1, table_name2=table_name2)
 #     records = self.table_read_records(table.name)
 
 #     return records
 
-# def crossref_read_record(self, tablename1, tablename2, primarykey):
+# def crossref_read_record(self, table_name1, table_name2, primarykey):
 #     """
 #     reads the crossreference table and retrieves only elements for the rowid given of table1
 #     """
 
-#     table = self.crossref_get_one(tablename1, tablename2)
+#     table = self.crossref_get_one(table_name1, table_name2)
 #     # print(table.name)
 #     records = self.table_read_records(table.name)
     
@@ -465,14 +671,14 @@ def table_delete(db, tablename):
 #     records_found = []
 #     for record in records:
 #         for valuepair in record.valuepairs:
-#             if valuepair[0] == tablename1 + "_id":
+#             if valuepair[0] == table_name1 + "_id":
 #                 if valuepair[1] == primarykey:
 #                     records_found += [record]
 #                     break
 
 #     return records_found
 
-# def record_create(self, tablename, values=[], recordarray=[], recorddict={}):
+# def record_create(self, table_name, values=[], recordarray=[], recorddict={}):
 #     """
 #     creates a draft record that can still be 
 #     manipulated before making it definitive
@@ -482,7 +688,7 @@ def table_delete(db, tablename):
 #     table_add_records method
 #     """
 
-#     table = self.database.tables[tablename]
+#     table = self.database.tables[table_name]
 
 #     # if recordarray is given, take it as is
 #     if recordarray != []:
@@ -512,7 +718,7 @@ def table_delete(db, tablename):
 #     # print(f"created record with recordarray {record.recordarray}")
 #     return record
 
-# def records_create(self, tablename, recordsvalues =[], recorddicts = []):
+# def records_create(self, table_name, recordsvalues =[], recorddicts = []):
 #     """
 #     creates multiple draft records that can still be 
 #     manipulated before making it definitive
@@ -526,35 +732,11 @@ def table_delete(db, tablename):
 #     if recordsvalues != []:
 
 #         for values in recordsvalues:
-#             records += [self.record_create(tablename, values=values)]
+#             records += [self.record_create(table_name, values=values)]
 
 #     elif recorddicts != []:
 #         for recorddict in recorddicts:
-#             records += [self.record_create(tablename, recorddict=recorddict)]
-
-#     return records
-
-# def transform_sql_to_record(self, column_names, sqlrecords):
-#     """
-#     uses table object as input, as its used privately and not made to be called directly by using application
-#     """
-
-#     # print(sqlrecords)
-
-#     records = []
-#     for sqlrecord in sqlrecords:
-
-#         recordarray = []
-#         for value in sqlrecord:
-#             recordarray += [value]
-
-#         recordobject = Record(
-#             column_names=column_names, 
-#             recordarray=recordarray
-#             )
-#         # print(f"Transformed Record object with recordarray: {recordobject.recordarray}")
-
-#         records += [recordobject]
+#             records += [self.record_create(table_name, recorddict=recorddict)]
 
 #     return records
 
@@ -590,142 +772,16 @@ def table_delete(db, tablename):
 
 #     self.execute_parameterised_query(query, parameters)
 
-# def get_table(self, tablename):
+# def get_table(self, table_name):
     
-#     retrieved_table = self.tables[tablename]
+#     retrieved_table = self.tables[table_name]
 #     print(retrieved_table)
 
 #     return retrieved_table
 
-# def read_table_names(self):
-
-#     query = f"SELECT name FROM sqlite_master WHERE type="table";"
-    
-#     cursor = self.execute_query(query=query)
-#     data = cursor.fetchall()
-#     # print(tables)
-
-#     tables = []
-#     for datapoint in data:
-#         tables += [datapoint[0]]
-
-#     return tables
-
-# def read_column_names(self, table):
-
-#     query = f"SELECT * FROM {table};"
-    
-#     cursor = self.execute_query(query=query)
-#     description = cursor.description
-#     # print(description)
-
-#     # print(description)
-#     columns = []
-#     for record in description:
-#         # print(record[0])
-#         columns += [record[0]]
-    
-#     # print(columns)
-#     return columns
-
-# def read_column_metadata(self, table):
-    
-#     # print(table)
-#     cursor = self.execute_query(f"PRAGMA table_info({table})")
-#     data = cursor.fetchall()
-
-#     column_order = []
-#     column_names = []
-#     column_types = []
-
-#     for datapoint in data:
-#         # print(f"{datapoint[0]} {datapoint[1]} {datapoint[2]}")
-#         column_order += [datapoint[0]]
-#         column_names += [datapoint[1]]
-#         column_types += [datapoint[2]]
-
-#     metadata = {
-#         "column_order": column_order,
-#         "column_names": column_names,
-#         "column_types": column_types,
-#     }
-#     # print(metadata)
-
-#     return metadata
-
-# def read_column_types(self, table):
-
-#     cursor = self.execute_query(f"PRAGMA table_info({table})")
-#     data = cursor.fetchall()
-
-#     columns = []
-#     for datapoint in data:
-#         # print(f"{datapoint[0]} {datapoint[1]} {datapoint[2]}")
-#         columns += [datapoint[2]]
-
-#     # print(columns)
-#     return columns
-
-# def read_records(self, tablename, columns=[], where = []):
-
-#     if columns == []:
-#         column_line = "*"
-
-#     else:
-#         column_line = ", ".join(columns)
-    
-#     parameters = tuple()
-
-#     # where can be collected as [[column name, [values]], [column name2, [values2]]]
-#     # print(f"where {where}")
-#     if where == []:
-#         whereline = ""
-
-#     else:
-#         whereline = "WHERE "
-#         for statement in where:
-#             parameters += tuple(statement[1])
-#             # print(f"statement {statement}")
-#             # print(f"statement0 {statement[0]}")
-#             # print(f"statement1 {statement[1]}")
-#             whereline += f"{statement[0]}"
-#             whereline += " IN ("
-#             whereline += ", ".join("?" for _ in statement[1])
-#             whereline += ") AND "
-#         whereline = whereline[:-5]
-#         # print(f"whereline {whereline}")
-#     # print(f"parameters = {parameters}")
-
-#     query = f"SELECT {column_line} from {tablename} {whereline}"
-
-#     cursor = self.execute_parameterised_query(query, parameters)
-#     records = self.get_records_array(cursor.fetchall())
-
-#     # print(f"sqlrecords {records}")
-#     return records
 
 
-# def create_records(self, tablename, column_names, valuepairs):
-    
-#     # print(f"create records database with tablename {tablename}, columns {column_names} and valuepairs {valuepairs}")
 
-#     # transform column names to a string
-#     column_text = ", ".join(column_names)
-
-#     # create placeholders
-#     placeholders = ""
-#     parameters = ()
-#     for valuepair in valuepairs:
-#         valuepair_parameters = tuple(valuepair)
-#         parameters += valuepair_parameters
-#         valuepair_placeholders = "(" + ",".join("?" for value in valuepair) + "),\n"
-#         placeholders += valuepair_placeholders
-#     placeholders = placeholders[:-2]
-#     # print(f"placeholders = {placeholders}")
-#     # print(f"parameters = {parameters}")
-
-#     query = f"INSERT INTO {tablename}\n({column_text})\nVALUES\n{placeholders}\n;"
-#     self.execute_parameterised_query(query, parameters)
 
 # def add_records(self, table, records):
 
@@ -734,12 +790,12 @@ def table_delete(db, tablename):
 #         values += [record.values]
 
 #     self.create_records(
-#         tablename = table.name,
+#         table_name = table.name,
 #         column_names = table.column_names[1:],
 #         valuepairs = values,
 #     )
 
-# def update_records(self, tablename, valuepairs, where):
+# def update_records(self, table_name, valuepairs, where):
 
 #     parameters = tuple()
 
@@ -761,26 +817,14 @@ def table_delete(db, tablename):
 #     # print(f"where_placeholders = {where_placeholders}")
 #     # print(f"parameters = {parameters}")
 
-#     query = f"UPDATE {tablename} SET\n{set_placeholders}\nWHERE\n{where_placeholders}\n;"
+#     query = f"UPDATE {table_name} SET\n{set_placeholders}\nWHERE\n{where_placeholders}\n;"
 #     self.execute_parameterised_query(query, parameters)
 
-# def get_records_array(self, sqlrecords):
 
-#     recordarrays = []
 
-#     for sqlrecord in sqlrecords:
-#         recordarray = []
+# def get_max_row(self, table_name):
 
-#         for value in sqlrecord:
-#             recordarray += [value]
-
-#         recordarrays += [recordarray]
-
-#     return recordarrays
-
-# def get_max_row(self, tablename):
-
-#     cursor = self.execute_query(f"SELECT COUNT(id) FROM {tablename}")
+#     cursor = self.execute_query(f"SELECT COUNT(id) FROM {table_name}")
 #     lastrow = cursor.fetchall()[0][0]
 #     if lastrow == None:
 #         lastrow = 0
