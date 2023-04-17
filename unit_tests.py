@@ -11,6 +11,9 @@ db.close()
 # connect to existing database
 db = Database(filename="science")
 
+
+
+
 # create a table
 table_dict_gender = {"gender": {
         "id": {"column_type": "int", "primary_key": True, "autonumber": True},
@@ -39,17 +42,29 @@ table_dict_scientists = {"scientist": {
     }}
 handler.create_table(db=db, config_dict=table_dict_scientists)
 
+# test deleting of table
+handler.delete_table(db=db, table_name="gender")
 
-# add some records directly in the database
+
+
+
+# add some records with a list of dicts, columname: value
 handler.create_records(db=db, table_name="scientist",
     records=[
         {"name":"Hawking", "age":68, "sex_id":1},
         {"name":"Marie Curie", "age":20, "sex_id":2},
-        {"name":"Einstein", "age":100, "sex_id":1},
+        {"name":"Einstein", "age":100, "sex_id":True},
     ])
 
-# test deleting of table
-handler.delete_table(db=db, table_name="gender")
+# # add some records with a list of lists containing just values
+# handler.create_records(db=db, table_name="scientist",
+#     records=[
+#         ["Rosenburg", 78, 1],
+#         ["Neil dGrasse Tyson", 57, 1],
+#     ])
+
+
+
 
 # get all table names
 print(f"table names are {handler.get_table_names(db=db)}")
@@ -82,21 +97,6 @@ table_scientist = handler.get_tables(db=db, table_selection="scientist")
 
 # print records of table
 print(table_scientist.records)
-# def print_records(records):
-    
-#     for record in records:
-#         record.print()
-
-# print_records(records=table_scientist.records)
-
-# get table object
-# print(handler.get_tables(db=db, table_selection="scientist"))
-
-
-
-
-
-
 
 
 
@@ -108,27 +108,6 @@ print(table_scientist.records)
 # delete database
 db.delete()
 
-
-
-
-# # adding more tables with column dict
-# table_nobel = handler.table_create(
-#     table_name = "nobelprizes",
-#     column_dict={
-#         "name": "string",
-#         "description": "str",
-#     },
-# )
-
-
-# # add some records directly in the database with recorddict
-# handler.table_create_add_records(
-#     table_name="scientists",
-#     recorddicts=[
-#         {"name":"Rosenburg", "age": 78, "gender_id": 1,},
-#         {"name":"Neil dGrasse Tyson", "age": 57, "gender_id": True,},
-#         ]
-#     )
 
 # # gather records through accessing the table object (better performance)
 # print(handler.database.tables["scientists"].records)

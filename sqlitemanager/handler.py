@@ -12,7 +12,7 @@ def create_table(db, config_dict, record_dict = {}):
     the config dict is a nested dict where the table_name is the first key with as value a dict with the column names as keys
     these columns each have a dict containing the parameters of the columns
 
-    config_type is the only mandatory parameter
+    column_type is the only mandatory parameter
     The function will convert automatically the column types to the right SQL query parameters for certain keywords (not caps sensitive)
     and can transform these common type terms, like int, integer, number, str, string, txt, text, date, time, dt, datetime
 
@@ -31,7 +31,7 @@ def create_table(db, config_dict, record_dict = {}):
 
     Optionally you can add already records for tables by adding a list of record dicts to be added immediately after creating the table
     The record dicts are just a dict where column name is the key and the data is the value
-    {people_table:[
+    {os_table:[
             {"name":"Fedora","age":300},
             {"name":"Ubuntu","age":50}
     }
@@ -101,22 +101,40 @@ def create_table(db, config_dict, record_dict = {}):
 
 def create_records(db, table_name, records):
     """
-    Insert records into a table
+    Insert new records into a table, tablename should be a string
     records come in the form of a list of record dicts 
     [
     {column:value, column2:value},
     {column:value, column2:value}
     ]
+
+    or just a list of values
+    [value1, value2, value3]
     """
 
-    for record in records:
+    # # if records is a list of lists, make it a dict to reuse list of dict functionality
+    # if isinstance(records[0],list):
+    #     print(f"records is a list of lists")
+    #     column_names = get_table_column_names(db=db, table_selection=table_name)
+    #     record_dicts = []
+    #     for record in records:
+    #         record_dict = dict(zip(column_names, record))
+    #         record_dicts += [record_dict]
+    # else:
+    #     print(f"records is a list of dicts")
+    #     record_dicts = records
+
+    # process records in list of dicts format
+    for record in record_dicts:
         column_names = []
         values = []
 
         for column_name in record:
             column_names += [column_name]
 
+            # string value needs to have added single quotes for the query to denote its a string
             value = f"'{record[column_name]}'" if isinstance(record[column_name], str) else record[column_name]
+
             values += [f"{value}"]
 
         columns_text = ", ".join(column_names)
@@ -158,6 +176,7 @@ def get_table_metadata(db, table_selection=[]):
     """
     Fetches information from the database about all or a selection of tables within the database
     It fetches columns with ordering and types and returns a dict of tables, columns and this metadata.
+
     {'scientist': {
         'id': 
             {'order': 0, 'type': 'INTEGER'}, 
@@ -221,8 +240,11 @@ def get_table_metadata(db, table_selection=[]):
 
 def get_table_column_names(db, table_selection=[]):
     """
-    if table selection is a single table as string, it will return a list of columns within this table
+    Fetches the column names of one or multiple tables.
+
+    if table selection is a single table as string, it will return solely a list of column names within this table
     if the table selection is in list form, even if its a single table, it will return a dict of tables and their columns as value
+    If its empty a dict containing all tables and their column names will be given
     """
 
     table_metadata = get_table_metadata(db, table_selection=table_selection)
