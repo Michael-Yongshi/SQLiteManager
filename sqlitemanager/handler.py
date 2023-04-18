@@ -452,6 +452,73 @@ def resolve_where(db, where, parameterised = False):
 
         return whereline
 
+def create_xref_table(db, xref_dict, records=[]):
+    """
+    Creates a crossreference table for tables with given table names.
+    Next to the columns that contain the foreign keys, a column for a description is made for additional info.
+    """
+
+    table_name_1, table_name_2, column_name_1, column_name_2, xref_table_name, xref_column_name_1, xref_column_name_2 = resolve_xref_table(xref_dict=xref_dict)
+
+    config_dict = {xref_table_name: {
+            xref_column_name_1: {"column_type": "INTEGER", "foreign_key": {table_name_1:column_name_1}},
+            xref_column_name_2: {"column_type": "INTEGER", "foreign_key": {table_name_2:column_name_2}},
+    }}
+
+    create_table(db=db, config_dict=config_dict)
+
+    if records != []:
+        create_records(db=db, table_name=xref_table_name, records=records)
+
+def create_xref_records(db, xref_dict):
+    """
+    will create a record in the crossreference table that satisfies the 'where' clause. 
+    if the where clause contains the '=' or 'in' operator and the columns of the actual crossreference table
+    the crossreference will be tried immediately without first looking up the rows 
+    (should not be necessary so saves on performance)
+
+    if this is not satisfied, it will first look up the necessary records satisfying the condition
+    only then try to create a crossreference using those records used crossreference columns
+
+    The following dict format is accepted to determine the crossreference
+    
+    xref_record_dict = {
+        "table_name1: {
+            "id":{
+            "operator":"=",
+            "values":[#]
+            }
+        },
+        "table_name2: {
+            "name":{
+            "operator":"=",
+            "values":["some value2"]
+            }
+        }
+    }
+    """
+
+    table_name_1, table_name_2, column_name_1, column_name_2, xref_table_name, xref_column_name_1, xref_column_name_2 = resolve_xref_table(xref_dict=xref_dict)
+
+    # for table_name in xref_dict:
+
+def resolve_xref_table(xref_dict):
+
+    table_names = list(xref_dict)
+
+    table_name_1 = table_names[0]
+    table_name_2 = table_names[1]
+    column_name_1 = xref_dict[table_name_1]
+    column_name_2 = xref_dict[table_name_2]
+
+    xref_table_name = f"CROSSREF_{table_name_1}_{table_name_2}"
+    xref_column_name_1 = f"{table_name_1}_{column_name_1}"
+    xref_column_name_2 = f"{table_name_2}_{column_name_2}"
+
+    return table_name_1, table_name_2, column_name_1, column_name_2, xref_table_name, xref_column_name_1, xref_column_name_2
+
+
+        
 
 
 # def table_sync(self, table_name):
@@ -578,19 +645,6 @@ def resolve_where(db, where, parameterised = False):
 #     lastrow = self.database.get_max_row(table_name)
 #     return lastrow
 
-# def crossref_create(self, table_name1, table_name2):
-#     """
-#     Creates a crossreference table for tables with given table names.
-#     Next to the columns that contain the foreign keys, a column for a description is made for additional info.
-#     """
-
-#     crossref_table = self.table_create(
-#         table_name = f"CROSSREF_{table_name1}_{table_name2}",
-#         column_names=[f"{table_name1}_id", f"{table_name2}_id", "description"],
-#         column_types=[f"INTEGER REFERENCES {table_name1}(id)", f"INTEGER REFERENCES {table_name2}(id)", "TEXT"],
-#     )
-
-#     return crossref_table
 
 # def crossref_get(self, table_name1, table_name2):
 #     """

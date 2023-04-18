@@ -15,33 +15,33 @@ db = Database(filename="science")
 
 
 # create a table
-table_dict_gender = {"gender": {
+table_dict = {"gender": {
         "id": {"column_type": "int", "primary_key": True, "autonumber": True},
         "name": {"column_type": "txt",},
     }}
-handler.create_table(db=db, config_dict=table_dict_gender)
+handler.create_table(db=db, config_dict=table_dict)
 
 # create a table with records
-table_dict_sex = {"sex": {
+table_dict = {"sex": {
         "id": {"column_type": "number", "primary_key": True, "autonumber": True},
         "name": {"column_type": "TEXT",},
     }}
-records_sex = {"sex":[
+record_dict = {"sex":[
         {"name":"Male"},
         {"name":"Female"}
         ]
     }
-handler.create_table(db=db, config_dict=table_dict_sex, record_dict=records_sex)
+handler.create_table(db=db, config_dict=table_dict, record_dict=record_dict)
 
 # create a table with a foreign key to the first table
-table_dict_scientists = {"scientist": {
+table_dict = {"scientist": {
         "id": {"column_type": "INTEGER", "primary_key": True, "autonumber": True},
         "name": {"column_type": "str"},
         "age": {"column_type": "#"},
         "sex_id": {"column_type": "INT", "foreign_key": {"sex":"id"}},
         "creation_date": {"column_type": "dt", "column_default":"now"},
     }}
-handler.create_table(db=db, config_dict=table_dict_scientists)
+handler.create_table(db=db, config_dict=table_dict)
 
 # test deleting of table
 handler.delete_table(db=db, table_name="gender")
@@ -134,30 +134,65 @@ update = {"name":"Marie Curie"}
 handler.update_records(db=db, table_name="scientist", update_dict=update, where=where)
 
 
+# crossref with a static table
+
+# create a table with records
+table_dict = {"nobelprize": {
+        "id": {"column_type": "number", "primary_key": True, "autonumber": True},
+        "name": {"column_type": "TEXT",},
+        "description": {"column_type": "string",},
+}}
+record_dict = {"nobelprize":[
+        {"name":"Peace", "description":"Peace nobel prize"},
+        {"name":"Economy", "description":"Economy nobel prize"},
+        {"name":"Physics", "description":"Physics nobel prize"},
+        {"name":"Sociology", "description":"Sociology nobel prize"},
+        ]}
+handler.create_table(db=db, config_dict=table_dict, record_dict=record_dict)
+
+
+# adding a crossref table
+xref_table_dict = {
+    "scientist":"id",
+    "nobelprize":"id",
+    }
+handler.create_xref_table(db=db, xref_dict = xref_table_dict)
+
+xref_record_dict = {
+    "scientist": {
+        "name":{
+        "operator":"=",
+        "values":["Einstein"]
+        }},
+    "nobelprize": {
+        "name":{
+        "operator":"=",
+        "values":["Physics"]
+        }}}
+# handler.create_xref_records(db=db, xref_record_dict = xref_record_dict)
+
+# # crossref with a dynamic table
+
+# # create a table with records
+# table_dict = {"paper": {
+#         "id": {"column_type": "number", "primary_key": True, "autonumber": True},
+#         "name": {"column_type": "TEXT",},
+#         "description": {"column_type": "string",},
+# }}
+# record_dict = {"paper":[
+#         {"name":"Palestine", "description":"Extrapolation on the palestinian cause"},
+#         {"name":"Wealth", "description":"On the Wealth of Nations"},
+#         {"name":"Time", "description":"A brief history of time"},
+#         {"name":"Fear", "description":"Controlling your fear"},
+#         ]}
+# handler.create_table(db=db, config_dict=table_dict, record_dict=record_dict)
+
+
+
 
 # delete database
 db.delete()
 
-
-# # conditional read with where statement
-# where = [["gender_id", [1]]]
-# records = handler.table_read_records(table_name="scientists", where=where)
-# print(f"read where")
-# print_records(records)
-
-# # update with where statement
-# valuepairs = [["gender_id", 1]]
-# where = [["name", ["Hawking"]]]
-# records = handler.table_update_records(table_name="scientists", valuepairs=valuepairs, where=where)
-# print(f"update true to false")
-# print_records(records)
-
-# # update with direct primary id
-# valuepairs = [["name", "Neil de'Grasse Tyson"], ["age", 40]]
-# primarykey = 5
-# records = handler.table_update_records(table_name="scientists", valuepairs=valuepairs, where=primarykey)
-# print(f"update record 'id = 5'")
-# print_records(records)
 
 # table_papers = handler.table_create(
 #     table_name = "papers",
@@ -174,40 +209,7 @@ db.delete()
 #     },
 # )
 
-# # creating multiple records and return them (these are not yet saved in the database)
-# records = handler.records_create(
-#     table_name="nobelprizes",
-#     recordsvalues=[
-#         ["Peace", "Peace nobel prize"],
-#         ["Economy", "Economy nobel prize"],
-#         ["Physics", "Physics nobel prize"],
-#         ["Sociology", "Sociology nobel prize"],
-#         ]
-#     )
-# # adding these records to the database
-# records = handler.table_add_records(table_name="nobelprizes", records=records)
-# print(f"creating multiple records")
-# print_records(records)
 
-# # again
-# records = handler.table_create_add_records(
-#     table_name="papers",
-#     recordsvalues=[
-#         ["Palestine", "Extrapolation on the palestinian cause"],
-#         ["Wealth", "On the Wealth of Nations"],
-#         ["Time", "A brief history of time"],
-#         ["Fear", "Controlling your fear"],
-#         ]
-#     )
-# print(f"creating multiple records")
-# print_records(records)
-
-# # adding a crossref table
-# crossref_table = handler.crossref_create(
-#     table_name1="scientists",
-#     table_name2="nobelprizes",
-# )
-# print(f"Database contains {handler.database.tables}")
 
 # # adding a crossref table
 # crossref_table = handler.crossref_create(
