@@ -17,14 +17,14 @@ db = Database(filename="science")
 # create a table
 table_dict_gender = {"gender": {
         "id": {"column_type": "int", "primary_key": True, "autonumber": True},
-        "name": {"column_type": "str",},
+        "name": {"column_type": "txt",},
     }}
 handler.create_table(db=db, config_dict=table_dict_gender)
 
 # create a table with records
 table_dict_sex = {"sex": {
-        "id": {"column_type": "int", "primary_key": True, "autonumber": True},
-        "name": {"column_type": "str",},
+        "id": {"column_type": "number", "primary_key": True, "autonumber": True},
+        "name": {"column_type": "TEXT",},
     }}
 records_sex = {"sex":[
         {"name":"Male"},
@@ -35,10 +35,11 @@ handler.create_table(db=db, config_dict=table_dict_sex, record_dict=records_sex)
 
 # create a table with a foreign key to the first table
 table_dict_scientists = {"scientist": {
-        "id": {"column_type": "int", "primary_key": True, "autonumber": True},
+        "id": {"column_type": "INTEGER", "primary_key": True, "autonumber": True},
         "name": {"column_type": "str"},
-        "age": {"column_type": "int"},
-        "sex_id": {"column_type": "int", "foreign_key": {"sex":"id"}},
+        "age": {"column_type": "#"},
+        "sex_id": {"column_type": "INT", "foreign_key": {"sex":"id"}},
+        "creation_date": {"column_type": "dt", "column_default":"now"},
     }}
 handler.create_table(db=db, config_dict=table_dict_scientists)
 
@@ -98,22 +99,34 @@ table_scientist = handler.get_tables(db=db, table_selection="scientist")
 # print records of table
 print(table_scientist.records)
 
+# get records directly from database
+where = {"sex_id":{
+    "operator":"=",
+    "values":1}}
+print("get male scientists")
+records = handler.get_records(db=db, table_name="scientist", columns=[], where=where)
 
+where = {"age":{
+    "operator":">",
+    "values":50}}
+print("get scientists over 50 years old")
+records = handler.get_records(db=db, table_name="scientist", columns=[], where=where)
 
+where = {"name":{
+    "operator":"IN",
+    "values":["Einstein", "Marie Curie"]}}
+print("get scientists named Einstein and Marie Curie")
+records = handler.get_records(db=db, table_name="scientist", columns=[], where=where)
 
-
-
-
+where = {"age":{
+    "operator":"IN",
+    "values":[68,20]}}
+print("get scientists aged 68 and 20")
+records = handler.get_records(db=db, table_name="scientist", columns=[], where=where)
 
 # delete database
 db.delete()
 
-
-# # gather records through accessing the table object (better performance)
-# print(handler.database.tables["scientists"].records)
-
-# # read the records from the database (performance heavy for large databases)
-# print(handler.table_read_records(table_name="scientists"))
 
 # # conditional read with where statement
 # where = [["gender_id", [1]]]

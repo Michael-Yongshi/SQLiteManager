@@ -54,9 +54,9 @@ def create_table(db, config_dict, record_dict = {}):
             # fetch column type
             column_type_transform = column_dict["column_type"].upper()
 
-            if column_type_transform in("INT", "INTEGER", "NUMBER"):
+            if column_type_transform in("INT", "INTEGER", "NUMBER", "#"):
                 column_type = "INTEGER"
-            elif column_type_transform in("STR", "STRING", "TXT", "TEXT", "NUMBER"):
+            elif column_type_transform in("STR", "STRING", "TXT", "TEXT"):
                 column_type = "TEXT"
             elif column_type_transform in("DATE", "TIME", "DT", "DATETIME"):
                 column_type = "DATE"
@@ -75,6 +75,8 @@ def create_table(db, config_dict, record_dict = {}):
 
             column_default = column_dict.get("column_default", "Not Found")
             if column_default != "Not Found":
+                if column_default == "now":
+                    column_default = "current_timestamp"
                 column_text += f" DEFAULT {column_default}"
 
             foreign_key_dict = column_dict.get("foreign_key", "Not Found")
@@ -125,7 +127,7 @@ def create_records(db, table_name, records):
     #     record_dicts = records
 
     # process records in list of dicts format
-    for record in record_dicts:
+    for record in records:
         column_names = []
         values = []
 
@@ -310,7 +312,11 @@ def get_records(db, table_name, columns=[], where = {}):
     fetches a selection of records of a table with optionally a selection of the columns and a where clause
 
     column selection is just an array of the column names
-    where can be collected as {column name: {values:[]}, column name2: {values:[]}}
+    where can be collected as {
+        column name: {"operator":"==", values:""}, 
+        column name2: {"operator":"in",values:[]}, 
+        column_name3: {"operator":">", values:#},
+    }
     """
 
     query = f"SELECT "
@@ -323,24 +329,54 @@ def get_records(db, table_name, columns=[], where = {}):
         column_names = columns
     query += column_line
 
-    # TODO, parameters have to be added seperately for a parameterised query
-    parameters = tuple()
     whereline = ""
     if where != {}:
         whereline += "WHERE "
-        for statement in where:
-            parameters += tuple(statement[1])
 
-            whereline += f"{statement[0]}"
-            whereline += " IN ("
-            whereline += ", ".join("?" for _ in statement[1])
-            whereline += ") AND "
-        whereline = whereline[:-5]
+        wherelist = []
+        for column_name in where:
+            where_dict = where[column_name]
+            operator = where_dict["operator"]
+            
+            values = where_dict["values"]
+            if isinstance(values, list):
+                if isinstance(values[0],str):
+                    values = "', '".join(values)
+                    values = f"('{values}')"
+                else:
+                    # mapping to convert int values in list to str values
+                    values = map(str, values)
+                    values = ", ".join(values)
+                    values = f"({values})"
+            elif isinstance(values,str):
+                values = f"'{values}'"
+
+            wherelist += [f"{column_name} {operator} {values}"]
+        
+        whereline += " AND ".join(wherelist)
+
+    # # TODO, parameters have to be added seperately for a parameterised query
+    # parameters = tuple()
+    # whereline = ""
+    # if where != {}:
+    #     whereline += "WHERE "
+    #     for statement in where:
+    #         parameters += tuple(statement[1])
+
+    #         whereline += f"{statement[0]}"
+    #         whereline += " IN ("
+    #         whereline += ", ".join("?" for _ in statement[1])
+    #         whereline += ") AND "
+    #     whereline = whereline[:-5]
         # print(f"whereline {whereline}")
     # print(f"parameters = {parameters}")
 
+    # query = f"SELECT {column_line} from {table_name} {whereline}"
+    # cursor = db.execute_parameterised_query(query, parameters)
+
     query = f"SELECT {column_line} from {table_name} {whereline}"
-    cursor = db.execute_parameterised_query(query, parameters)
+    print(query)
+    cursor = db.execute_query(query)
     sqlrecords = (cursor.fetchall())
 
     logging.warning(sqlrecords)
