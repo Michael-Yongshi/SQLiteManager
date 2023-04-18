@@ -101,51 +101,6 @@ def create_table(db, config_dict, record_dict = {}):
         if table_record_dict != "Not Found":
             create_records(db = db, table_name = table_name, records = table_record_dict)
 
-def create_records(db, table_name, records):
-    """
-    Insert new records into a table, tablename should be a string
-    records come in the form of a list of record dicts 
-    [
-    {column:value, column2:value},
-    {column:value, column2:value}
-    ]
-
-    or just a list of values
-    [value1, value2, value3]
-    """
-
-    # # if records is a list of lists, make it a dict to reuse list of dict functionality
-    # if isinstance(records[0],list):
-    #     print(f"records is a list of lists")
-    #     column_names = get_table_column_names(db=db, table_selection=table_name)
-    #     record_dicts = []
-    #     for record in records:
-    #         record_dict = dict(zip(column_names, record))
-    #         record_dicts += [record_dict]
-    # else:
-    #     print(f"records is a list of dicts")
-    #     record_dicts = records
-
-    # process records in list of dicts format
-    for record in records:
-        column_names = []
-        values = []
-
-        for column_name in record:
-            column_names += [column_name]
-
-            # string value needs to have added single quotes for the query to denote its a string
-            value = f"'{record[column_name]}'" if isinstance(record[column_name], str) else record[column_name]
-
-            values += [f"{value}"]
-
-        columns_text = ", ".join(column_names)
-        values_text = ", ".join(values)
-
-        query = f"INSERT INTO {table_name}\n({columns_text})\nVALUES\n({values_text})\n;"
-
-        db.execute_query(query)
-
 def delete_table(db, table_name):
     """
     Deleting a table from the database, does not return anything
@@ -307,6 +262,96 @@ def get_tables(db, table_selection=[]):
     else:
         return tables_dict
 
+def create_records(db, table_name, records):
+    """
+    Insert new records into a table, tablename should be a string
+    records come in the form of a list of record dicts 
+    [
+    {column:value, column2:value},
+    {column:value, column2:value}
+    ]
+    """
+
+    # process records in list of dicts format
+    for record in records:
+        column_names = []
+        values = []
+
+        for column_name in record:
+            column_names += [column_name]
+
+            # string value needs to have added single quotes for the query to denote its a string
+            value = f"'{record[column_name]}'" if isinstance(record[column_name], str) else record[column_name]
+
+            values += [f"{value}"]
+
+        columns_text = ", ".join(column_names)
+        values_text = ", ".join(values)
+
+        query = f"INSERT INTO {table_name}\n({columns_text})\nVALUES\n({values_text})\n;"
+
+        db.execute_query(query)
+
+def update_records(db, table_name, update_dict, where):
+    """
+    Update records into a table, tablename should be a string
+    update dict comes into the form of to-be-updated columns
+
+    to be updated columns are in the form of a dict
+    {
+        "column_name":value,
+        "column_name2":value2,
+    }
+
+    where is in the form of a dict
+    {
+        "column_name":{
+            "operator":">",
+            "values":50
+        }
+    }
+
+    """
+
+    where = resolve_where(db=db, where=where, parameterised=False)
+
+    update_list = []
+
+    for column_name, value in update_dict.items():
+        if isinstance(value, str):
+            value = f"'{value}'"
+        update_list += [f"{column_name} = {value}"]
+    set_text = ",\n".join(update_list)
+
+    where_text = where
+
+    query = f"UPDATE {table_name} \nSET {set_text} {where_text}\n;"
+    db.execute_query(query)
+
+
+    # parameters = tuple()
+
+    # # create set_placeholders
+    # set_placeholders = ""
+    # for valuepair in valuepairs:
+    #     parameters += tuple([valuepair[1]])
+    #     set_placeholders += valuepair[0] + " = ?, "
+    # set_placeholders = set_placeholders[:-2]
+    # # print(f"set_placeholders = {set_placeholders}")
+    # # print(f"parameters = {parameters}")
+
+    # # create where_placeholders
+    # where_placeholders = ""
+    # for statement in where:
+    #     parameters += tuple(statement[1])
+    #     where_placeholders += statement[0] + " = ? AND "
+    # where_placeholders = where_placeholders[:-5]
+    # # print(f"where_placeholders = {where_placeholders}")
+    # # print(f"parameters = {parameters}")
+
+    # query = f"UPDATE {table_name} SET\n{set_placeholders}\nWHERE\n{where_placeholders}\n;"
+    # self.execute_parameterised_query(query, parameters)
+
 def get_records(db, table_name, columns=[], where = {}):
     """
     fetches a selection of records of a table with optionally a selection of the columns and a where clause
@@ -316,6 +361,14 @@ def get_records(db, table_name, columns=[], where = {}):
         column name: {"operator":"==", values:""}, 
         column name2: {"operator":"in",values:[]}, 
         column_name3: {"operator":">", values:#},
+    }
+
+    where is in the form of a dict
+    {
+        "column_name":{
+            "operator":">",
+            "values":50
+        }
     }
     """
 
@@ -327,55 +380,12 @@ def get_records(db, table_name, columns=[], where = {}):
     else:
         column_line = ", ".join(columns)
         column_names = columns
+
     query += column_line
 
-    whereline = ""
-    if where != {}:
-        whereline += "WHERE "
-
-        wherelist = []
-        for column_name in where:
-            where_dict = where[column_name]
-            operator = where_dict["operator"]
-            
-            values = where_dict["values"]
-            if isinstance(values, list):
-                if isinstance(values[0],str):
-                    values = "', '".join(values)
-                    values = f"('{values}')"
-                else:
-                    # mapping to convert int values in list to str values
-                    values = map(str, values)
-                    values = ", ".join(values)
-                    values = f"({values})"
-            elif isinstance(values,str):
-                values = f"'{values}'"
-
-            wherelist += [f"{column_name} {operator} {values}"]
-        
-        whereline += " AND ".join(wherelist)
-
-    # # TODO, parameters have to be added seperately for a parameterised query
-    # parameters = tuple()
-    # whereline = ""
-    # if where != {}:
-    #     whereline += "WHERE "
-    #     for statement in where:
-    #         parameters += tuple(statement[1])
-
-    #         whereline += f"{statement[0]}"
-    #         whereline += " IN ("
-    #         whereline += ", ".join("?" for _ in statement[1])
-    #         whereline += ") AND "
-    #     whereline = whereline[:-5]
-        # print(f"whereline {whereline}")
-    # print(f"parameters = {parameters}")
-
-    # query = f"SELECT {column_line} from {table_name} {whereline}"
-    # cursor = db.execute_parameterised_query(query, parameters)
+    whereline = resolve_where(db, where, parameterised=False)
 
     query = f"SELECT {column_line} from {table_name} {whereline}"
-    print(query)
     cursor = db.execute_query(query)
     sqlrecords = (cursor.fetchall())
 
@@ -388,6 +398,60 @@ def get_records(db, table_name, columns=[], where = {}):
         records += [record_object]
 
     return records
+
+def resolve_where(db, where, parameterised = False):
+    
+    if parameterised:
+        # # TODO, parameters have to be added seperately for a parameterised query
+        # parameters = tuple()
+        # whereline = ""
+        # if where != {}:
+        #     whereline += "WHERE "
+        #     for statement in where:
+        #         parameters += tuple(statement[1])
+
+        #         whereline += f"{statement[0]}"
+        #         whereline += " IN ("
+        #         whereline += ", ".join("?" for _ in statement[1])
+        #         whereline += ") AND "
+        #     whereline = whereline[:-5]
+            # print(f"whereline {whereline}")
+        # print(f"parameters = {parameters}")
+
+        # query = f"SELECT {column_line} from {table_name} {whereline}"
+        # cursor = db.execute_parameterised_query(query, parameters)
+        pass
+
+    else:
+    
+        whereline = ""
+        if where != {}:
+            whereline += "WHERE "
+
+            wherelist = []
+            for column_name in where:
+                where_dict = where[column_name]
+                operator = where_dict["operator"]
+                
+                values = where_dict["values"]
+                if isinstance(values, list):
+                    if isinstance(values[0],str):
+                        values = "', '".join(values)
+                        values = f"('{values}')"
+                    else:
+                        # mapping to convert int values in list to str values
+                        values = map(str, values)
+                        values = ", ".join(values)
+                        values = f"({values})"
+                elif isinstance(values,str):
+                    values = f"'{values}'"
+
+                wherelist += [f"{column_name} {operator} {values}"]
+            
+            whereline += " AND ".join(wherelist)
+
+        return whereline
+
 
 
 # def table_sync(self, table_name):
@@ -438,39 +502,6 @@ def get_records(db, table_name, columns=[], where = {}):
 
 #     return records
 
-# def table_update_records(self, table_name, valuepairs, where):
-#     """
-#     update specific records of the specified table
-
-#     if where is an integer or array of integers, it will update those specified rows based on primary key.
-#     otherwise a valuepair is expected in the form 
-#     [<columnname>, [<values]]
-#     """
-
-#     where = self.transform_where(where=where)
-
-#     records_to_be_updated = self.table_read_records(table_name, where=where)
-
-#     ids_to_be_updated = []
-#     for record in records_to_be_updated:
-#         ids_to_be_updated += [record.primarykey]
-#     ids_to_be_updated = [["id", ids_to_be_updated]]
-
-#     # the actual updating
-#     self.database.update_records(
-#         table_name=table_name, 
-#         valuepairs = valuepairs,
-#         where=where,
-#     )
-
-#     # refresh table records
-#     self.table_sync(table_name)
-
-#     print(f"ids to be updated {ids_to_be_updated}")
-#     # read updated records from primary key list
-#     records = self.table_read_records(table_name, where=ids_to_be_updated)
-
-#     return records
 
 # def table_read_records(self, table_name, where=[]):
 
@@ -852,31 +883,6 @@ def get_records(db, table_name, columns=[], where = {}):
 #         column_names = table.column_names[1:],
 #         valuepairs = values,
 #     )
-
-# def update_records(self, table_name, valuepairs, where):
-
-#     parameters = tuple()
-
-#     # create set_placeholders
-#     set_placeholders = ""
-#     for valuepair in valuepairs:
-#         parameters += tuple([valuepair[1]])
-#         set_placeholders += valuepair[0] + " = ?, "
-#     set_placeholders = set_placeholders[:-2]
-#     # print(f"set_placeholders = {set_placeholders}")
-#     # print(f"parameters = {parameters}")
-
-#     # create where_placeholders
-#     where_placeholders = ""
-#     for statement in where:
-#         parameters += tuple(statement[1])
-#         where_placeholders += statement[0] + " = ? AND "
-#     where_placeholders = where_placeholders[:-5]
-#     # print(f"where_placeholders = {where_placeholders}")
-#     # print(f"parameters = {parameters}")
-
-#     query = f"UPDATE {table_name} SET\n{set_placeholders}\nWHERE\n{where_placeholders}\n;"
-#     self.execute_parameterised_query(query, parameters)
 
 
 

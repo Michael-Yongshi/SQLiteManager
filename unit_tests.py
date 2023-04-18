@@ -53,7 +53,7 @@ handler.delete_table(db=db, table_name="gender")
 handler.create_records(db=db, table_name="scientist",
     records=[
         {"name":"Hawking", "age":68, "sex_id":1},
-        {"name":"Marie Curie", "age":20, "sex_id":2},
+        {"name":"Mary Curie", "age":20, "sex_id":2},
         {"name":"Einstein", "age":100, "sex_id":True},
     ])
 
@@ -101,9 +101,9 @@ print(table_scientist.records)
 
 # get records directly from database
 where = {"sex_id":{
-    "operator":"=",
+    "operator":"!=",
     "values":1}}
-print("get male scientists")
+print("get female scientists")
 records = handler.get_records(db=db, table_name="scientist", columns=[], where=where)
 
 where = {"age":{
@@ -114,7 +114,7 @@ records = handler.get_records(db=db, table_name="scientist", columns=[], where=w
 
 where = {"name":{
     "operator":"IN",
-    "values":["Einstein", "Marie Curie"]}}
+    "values":["Einstein", "Mary Curie"]}}
 print("get scientists named Einstein and Marie Curie")
 records = handler.get_records(db=db, table_name="scientist", columns=[], where=where)
 
@@ -123,6 +123,17 @@ where = {"age":{
     "values":[68,20]}}
 print("get scientists aged 68 and 20")
 records = handler.get_records(db=db, table_name="scientist", columns=[], where=where)
+
+
+
+# update records
+where = {"name":{
+    "operator":"=",
+    "values":["Mary Curie"]}}
+update = {"name":"Marie Curie"}
+handler.update_records(db=db, table_name="scientist", update_dict=update, where=where)
+
+
 
 # delete database
 db.delete()
