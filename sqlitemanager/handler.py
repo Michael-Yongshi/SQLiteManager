@@ -352,6 +352,20 @@ def update_records(db, table_name, update_dict, where):
     # query = f"UPDATE {table_name} SET\n{set_placeholders}\nWHERE\n{where_placeholders}\n;"
     # self.execute_parameterised_query(query, parameters)
 
+def delete_records(db, table_name, where):
+
+    where = resolve_where(db=db, where=where, parameterised=False)
+
+    # parameters = []
+    # for record in records:
+    #     parameters += [record.primarykey]
+
+    # placeholders = ", ".join("?" for _ in parameters)
+
+    query = f"DELETE FROM {table_name} WHERE {where}"
+
+    db.execute_query(query)
+
 def get_records(db, table_name, columns=[], where = {}):
     """
     fetches a selection of records of a table with optionally a selection of the columns and a where clause
@@ -564,67 +578,7 @@ def create_xref_records(db, xref_record_dict):
 
     create_records(db=db, table_name=xref_table_name, records=record_list)
 
-# def table_sync(self, table_name):
-    
-#     table = self.tables[table_name]
-#     sqlrecords = self.read_records(table_name=table_name, columns=table.column_names)
-#     table.records = self.transform_sql_to_record(column_names=table.column_names, sqlrecords=sqlrecords)
 
-# def table_create_add_records(self, table_name, recordsvalues=[], recorddicts=[]):
-#     """
-#     create records from given values and immediately add records in one go to specified table
-#     """
-
-#     if recorddicts != []:
-#         records = self.records_create(table_name, recorddicts=recorddicts)
-
-#     elif recordsvalues != []:
-#         records = self.records_create(table_name, recordsvalues=recordsvalues)
-    
-#     self.table_add_records(table_name, records)
-
-#     return records
-
-# def table_add_records(self, table_name, records):
-
-#     table = self.database.tables[table_name]
-
-#     # get current last row
-#     lastrow = self.table_max_row(table_name)
-
-#     # add the records to the table in the database
-#     self.database.add_records(
-#         table,
-#         records,
-#     )
-
-#     # refresh tableobjects records
-#     self.table_sync(table_name)
-
-#     # get last row after update
-#     newlastrow = self.table_max_row(table_name)
-
-#     # get all the just created rows (in an array lastrow of 1 is the 2nd record, so using lastrow number gets the record after the actual last row)
-#     records = table.records[lastrow:newlastrow]
-
-#     # print(f"Added records:")
-#     # print_records(records)
-
-#     return records
-
-
-# def table_read_records(self, table_name, where=[]):
-
-#     table = self.database.tables[table_name]
-
-#     if where == []:
-#         records = table.records
-#     else:
-#         sqlrecords = self.database.read_records(table_name=table_name, columns=table.column_names, where=where)
-#         records = self.transform_sql_to_record(column_names=table.column_names, sqlrecords=sqlrecords)
-#         # print(f"{self.name} records retrieved: {self.records}")
-
-#     return records
 
 # def table_get_foreign_table(self, table_name, column):
 #     """
@@ -672,17 +626,6 @@ def create_xref_records(db, xref_record_dict):
 #     #     foreign_keys += [record.recorddict[column]]
 
 #     return records
-
-# def table_delete_records(self, table_name, where=[]):
-
-#     table = self.database.tables[table_name]
-
-#     where = self.transform_where(where=where)
-
-#     records = self.table_read_records(table_name=table_name, where=where)
-#     self.database.delete_records(table=table, records=records)
-
-#     self.table_sync(table_name)
 
 # def table_max_row(self, table_name):
 #     lastrow = self.database.get_max_row(table_name)
@@ -946,17 +889,6 @@ def create_xref_records(db, xref_record_dict):
 #     else:
 #         return False
 
-# def delete_records(self, table, records):
-
-#     parameters = []
-#     for record in records:
-#         parameters += [record.primarykey]
-
-#     placeholders = ", ".join("?" for _ in parameters)
-
-#     query = f"DELETE FROM {table.name} WHERE id IN ({placeholders})"
-
-#     self.execute_parameterised_query(query, parameters)
 
 # def get_table(self, table_name):
     

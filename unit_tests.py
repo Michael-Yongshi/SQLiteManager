@@ -55,15 +55,9 @@ handler.create_records(db=db, table_name="scientist",
         {"name":"Hawking", "age":68, "sex_id":1},
         {"name":"Mary Curie", "age":20, "sex_id":2},
         {"name":"Einstein", "age":100, "sex_id":True},
+        {"name":"Rosenburg", "age":78, "sex_id":1},
+        {"name":"Neil dGrasse Tyson", "age":57, "sex_id":1},
     ])
-
-# # add some records with a list of lists containing just values
-# handler.create_records(db=db, table_name="scientist",
-#     records=[
-#         ["Rosenburg", 78, 1],
-#         ["Neil dGrasse Tyson", 57, 1],
-#     ])
-
 
 
 
@@ -134,6 +128,11 @@ update = {"name":"Marie Curie"}
 handler.update_records(db=db, table_name="scientist", update_dict=update, where=where)
 
 
+# delete records
+where = {"name":{
+    "operator":"=",
+    "values":["Rosenburg"]}}
+handler.delete_records(db=db, table_name="scientist", where=where)
 # crossref with a static table
 
 # create a table with records
@@ -158,6 +157,7 @@ xref_table_dict = {
     }
 handler.create_xref_table(db=db, xref_dict = xref_table_dict)
 
+# cross reference example one to many
 xref_record_dict = {
     "scientist": {
         "name":{
@@ -166,57 +166,29 @@ xref_record_dict = {
         }},
     "nobelprize": {
         "name":{
-        "operator":"=",
-        "values":["Physics"]
+        "operator":"in",
+        "values":["Physics", "Peace"]
         }}}
 handler.create_xref_records(db=db, xref_record_dict = xref_record_dict)
 
-# # crossref with a dynamic table
-
-# # create a table with records
-# table_dict = {"paper": {
-#         "id": {"column_type": "number", "primary_key": True, "autonumber": True},
-#         "name": {"column_type": "TEXT",},
-#         "description": {"column_type": "string",},
-# }}
-# record_dict = {"paper":[
-#         {"name":"Palestine", "description":"Extrapolation on the palestinian cause"},
-#         {"name":"Wealth", "description":"On the Wealth of Nations"},
-#         {"name":"Time", "description":"A brief history of time"},
-#         {"name":"Fear", "description":"Controlling your fear"},
-#         ]}
-# handler.create_table(db=db, config_dict=table_dict, record_dict=record_dict)
-
-
+# cross reference example many to many
+xref_record_dict = {
+    "scientist": {
+        "name":{
+        "operator":"in",
+        "values":["Hawking", "Marie Curie"]
+        }},
+    "nobelprize": {
+        "name":{
+        "operator":"in",
+        "values":["Economy", "Sociology"]
+        }}}
+handler.create_xref_records(db=db, xref_record_dict = xref_record_dict)
 
 
 # delete database
 db.delete()
 
-
-# table_papers = handler.table_create(
-#     table_name = "papers",
-#     column_dict={
-#         "name": "string",
-#         "description": "str",
-#     },
-# )
-# table_nobel = handler.table_create(
-#     table_name = "ignorants",
-#     column_dict={
-#         "name": "string",
-#         "description": "str",
-#     },
-# )
-
-
-
-# # adding a crossref table
-# crossref_table = handler.crossref_create(
-#     table_name1="scientists",
-#     table_name2="papers",
-# )
-# print(f"Database contains {handler.database.tables}")
 
 # # getting a crossref table
 # crossref_table = handler.crossref_get(
