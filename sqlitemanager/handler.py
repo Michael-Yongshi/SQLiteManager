@@ -407,8 +407,6 @@ def get_records(db, table_name, columns=[], where = {}):
     cursor = db.execute_query(query)
     sqlrecords = (cursor.fetchall())
 
-    logging.warning(sqlrecords)
-
     records = []
     for sqlrecord in sqlrecords:
         record_dict = dict(zip(column_names, sqlrecord))
@@ -533,6 +531,26 @@ def create_xref_records(db, xref_record_dict):
     table_name_b = table_names[1]
 
     # check correct xref table name and set the xref_dict parts to the correct table 1 and table 2 so you always end up with the same order
+    xref_table_name, xref_column_name_1, xref_column_name_2, table_name_1, table_name_2, column_name_1, column_name_2, inverse = get_xref_table(db=db, table_name_a=table_name_a, table_name_b=table_name_b)
+
+    table_1_where_dict = xref_record_dict[table_name_1]
+    table_2_where_dict = xref_record_dict[table_name_2]
+
+    # now we get the actually records that need to be linked for each side
+    table_1_records = get_records(db=db, table_name=table_name_1, columns=column_name_1, where=table_1_where_dict)
+    table_2_records = get_records(db=db, table_name=table_name_2, columns=column_name_2, where=table_2_where_dict)
+
+    record_list = []
+    # fill the records to be created dict with all matches from table1 with table 2
+    for record_1 in table_1_records:
+        for record_2 in table_2_records:
+            record_dict = {xref_column_name_1:record_1.dictionary[column_name_1], xref_column_name_2:record_2.dictionary[column_name_2]}
+            record_list += [record_dict]
+
+    create_records(db=db, table_name=xref_table_name, records=record_list)
+
+def get_xref_table(db, table_name_a, table_name_b):
+
     table_names_in_db = get_table_names(db=db)
     xref_table_name_asgiven = f"CROSSREF_{table_name_a}_{table_name_b}"
     xref_table_name_inverse = f"CROSSREF_{table_name_b}_{table_name_a}"
@@ -541,15 +559,13 @@ def create_xref_records(db, xref_record_dict):
         xref_table_name = xref_table_name_asgiven
         table_name_1 = table_name_a
         table_name_2 = table_name_b
-        table_1_where_dict = xref_record_dict[table_name_a]
-        table_2_where_dict = xref_record_dict[table_name_b]
+        inverse = False
 
     elif xref_table_name_inverse in table_names_in_db:
         xref_table_name = xref_table_name_inverse
         table_name_1 = table_name_b
         table_name_2 = table_name_a
-        table_1_where_dict = xref_record_dict[table_name_b]
-        table_2_where_dict = xref_record_dict[table_name_a]
+        inverse = True
 
     else:
         logging.critical(f"xref table with table names {table_name_1} and {table_name_2} not found")
@@ -563,22 +579,46 @@ def create_xref_records(db, xref_record_dict):
     column_name_1 = xref_column_name_1.split("_")[1]
     column_name_2 = xref_column_name_2.split("_")[1]
 
-    # now we get the actually records that need to be linked for each side
-    table_1_records = get_records(db=db, table_name=table_name_1, columns=column_name_1, where=table_1_where_dict)
-    table_2_records = get_records(db=db, table_name=table_name_2, columns=column_name_2, where=table_2_where_dict)
+    return xref_table_name, xref_column_name_1, xref_column_name_2, table_name_1, table_name_2, column_name_1, column_name_2, inverse
 
-    record_list = []
-    # fill the records to be created dict with all matches from table1 with table 2
-    for record_1 in table_1_records:
-        for record_2 in table_2_records:
-            record_dict = {xref_column_name_1:record_1.dictionary[column_name_1], xref_column_name_2:record_2.dictionary[column_name_2]}
-            record_list += [record_dict]
+def get_xref_records(db, source_table, target_table, source_where):
+    """
+    used to get records from a second table that are related to the selection of records of the first table
+    
+    source_table where dict
+    target_table name
+    
+    """
 
-    print(record_list)
+    # get cross reference table between source and target
+    xref_table_name, xref_column_name_1, xref_column_name_2, table_name_1, table_name_2, column_name_1, column_name_2, inverse = get_xref_table(db=db, table_name_a=source_table, table_name_b=target_table)
 
-    create_records(db=db, table_name=xref_table_name, records=record_list)
+    source_column_name = column_name_1 if inverse == False else column_name_2
+    target_column_name = column_name_2 if inverse == False else column_name_1
+    source_xref_column_name = xref_column_name_1 if inverse == False else xref_column_name_2
+    target_xref_column_name = xref_column_name_2 if inverse == False else xref_column_name_1
 
+    # get relevant records from source table
+    source_records = get_records(db=db, table_name=source_table, columns=source_column_name, where=source_where)
 
+    xref_where_values = []
+    for record in source_records:
+        xref_where_values += [record.dictionary[source_column_name]]
+
+    xref_where = {source_xref_column_name: {"operator":"in", "values": xref_where_values}}
+    xref_records = get_records(db=db, table_name=xref_table_name, where=xref_where)
+    # for record in xref_records:
+    #     record.print()
+
+    # get records from target table
+    target_where_values = []
+    for record in xref_records:
+        target_where_values += [record.dictionary[target_xref_column_name]]
+    target_where = {target_column_name: {"operator":"in", "values": target_where_values}}
+    target_records = get_records(db=db, table_name=target_table, where=target_where)
+
+    for record in target_records:
+        record.print()
 
 # def table_get_foreign_table(self, table_name, column):
 #     """

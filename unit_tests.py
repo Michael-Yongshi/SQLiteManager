@@ -185,6 +185,17 @@ xref_record_dict = {
         }}}
 handler.create_xref_records(db=db, xref_record_dict = xref_record_dict)
 
+# get xref records for a single record in source table
+where = {"name":{
+    "operator":"=",
+    "values":["Einstein"]}}
+handler.get_xref_records(db=db, source_table="scientist", target_table="nobelprize", source_where=where)
+
+# get many to many xref combinations
+where = {"name":{
+    "operator":"in",
+    "values":["Einstein","Marie Curie"]}}
+handler.get_xref_records(db=db, source_table="scientist", target_table="nobelprize", source_where=where)
 
 # delete database
 db.delete()
