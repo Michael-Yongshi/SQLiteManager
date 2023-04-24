@@ -169,7 +169,7 @@ xref_record_dict = {
         "operator":"=",
         "values":["Physics"]
         }}}
-# handler.create_xref_records(db=db, xref_record_dict = xref_record_dict)
+handler.create_xref_records(db=db, xref_record_dict = xref_record_dict)
 
 # # crossref with a dynamic table
 

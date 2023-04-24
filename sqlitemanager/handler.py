@@ -356,7 +356,8 @@ def get_records(db, table_name, columns=[], where = {}):
     """
     fetches a selection of records of a table with optionally a selection of the columns and a where clause
 
-    column selection is just an array of the column names
+    column selection is just an array of the column names or a string for just a single column
+
     where can be collected as {
         column name: {"operator":"==", values:""}, 
         column name2: {"operator":"in",values:[]}, 
@@ -377,6 +378,9 @@ def get_records(db, table_name, columns=[], where = {}):
     if columns == []:
         column_line = "*"
         column_names = get_table_column_names(db=db, table_selection=table_name)
+    elif isinstance(columns, str):
+        column_line = columns
+        column_names = [columns]
     else:
         column_line = ", ".join(columns)
         column_names = columns
@@ -458,8 +462,19 @@ def create_xref_table(db, xref_dict, records=[]):
     Next to the columns that contain the foreign keys, a column for a description is made for additional info.
     """
 
-    table_name_1, table_name_2, column_name_1, column_name_2, xref_table_name, xref_column_name_1, xref_column_name_2 = resolve_xref_table(xref_dict=xref_dict)
+    # get desired table names
+    table_names = list(xref_dict)
+    table_name_1 = table_names[0]
+    table_name_2 = table_names[1]
+    xref_table_name = f"CROSSREF_{table_name_1}_{table_name_2}"
 
+    # get desired column names that are referenced
+    column_name_1 = xref_dict[table_name_1]
+    column_name_2 = xref_dict[table_name_2]
+    xref_column_name_1 = f"{table_name_1}_{column_name_1}"
+    xref_column_name_2 = f"{table_name_2}_{column_name_2}"
+
+    # set up create table config dict.
     config_dict = {xref_table_name: {
             xref_column_name_1: {"column_type": "INTEGER", "foreign_key": {table_name_1:column_name_1}},
             xref_column_name_2: {"column_type": "INTEGER", "foreign_key": {table_name_2:column_name_2}},
@@ -467,10 +482,10 @@ def create_xref_table(db, xref_dict, records=[]):
 
     create_table(db=db, config_dict=config_dict)
 
-    if records != []:
-        create_records(db=db, table_name=xref_table_name, records=records)
+    # if records != []:
+    #     create_records(db=db, table_name=xref_table_name, records=records)
 
-def create_xref_records(db, xref_dict):
+def create_xref_records(db, xref_record_dict):
     """
     will create a record in the crossreference table that satisfies the 'where' clause. 
     if the where clause contains the '=' or 'in' operator and the columns of the actual crossreference table
@@ -498,28 +513,56 @@ def create_xref_records(db, xref_dict):
     }
     """
 
-    table_name_1, table_name_2, column_name_1, column_name_2, xref_table_name, xref_column_name_1, xref_column_name_2 = resolve_xref_table(xref_dict=xref_dict)
+    # get desired table names
+    table_names = list(xref_record_dict)
+    table_name_a = table_names[0]
+    table_name_b = table_names[1]
 
-    # for table_name in xref_dict:
+    # check correct xref table name and set the xref_dict parts to the correct table 1 and table 2 so you always end up with the same order
+    table_names_in_db = get_table_names(db=db)
+    xref_table_name_asgiven = f"CROSSREF_{table_name_a}_{table_name_b}"
+    xref_table_name_inverse = f"CROSSREF_{table_name_b}_{table_name_a}"
 
-def resolve_xref_table(xref_dict):
+    if xref_table_name_asgiven in table_names_in_db:
+        xref_table_name = xref_table_name_asgiven
+        table_name_1 = table_name_a
+        table_name_2 = table_name_b
+        table_1_where_dict = xref_record_dict[table_name_a]
+        table_2_where_dict = xref_record_dict[table_name_b]
 
-    table_names = list(xref_dict)
+    elif xref_table_name_inverse in table_names_in_db:
+        xref_table_name = xref_table_name_inverse
+        table_name_1 = table_name_b
+        table_name_2 = table_name_a
+        table_1_where_dict = xref_record_dict[table_name_b]
+        table_2_where_dict = xref_record_dict[table_name_a]
 
-    table_name_1 = table_names[0]
-    table_name_2 = table_names[1]
-    column_name_1 = xref_dict[table_name_1]
-    column_name_2 = xref_dict[table_name_2]
+    else:
+        logging.critical(f"xref table with table names {table_name_1} and {table_name_2} not found")
 
-    xref_table_name = f"CROSSREF_{table_name_1}_{table_name_2}"
-    xref_column_name_1 = f"{table_name_1}_{column_name_1}"
-    xref_column_name_2 = f"{table_name_2}_{column_name_2}"
+    # get column names of the xref table
+    column_names = get_table_column_names(db=db, table_selection=xref_table_name)
+    xref_column_name_1 = column_names[0]
+    xref_column_name_2 = column_names[1]
 
-    return table_name_1, table_name_2, column_name_1, column_name_2, xref_table_name, xref_column_name_1, xref_column_name_2
+    # the column names of the crossreference is in the form "tablename_columnname", so below results in the actual column names they reference to
+    column_name_1 = xref_column_name_1.split("_")[1]
+    column_name_2 = xref_column_name_2.split("_")[1]
 
+    # now we get the actually records that need to be linked for each side
+    table_1_records = get_records(db=db, table_name=table_name_1, columns=column_name_1, where=table_1_where_dict)
+    table_2_records = get_records(db=db, table_name=table_name_2, columns=column_name_2, where=table_2_where_dict)
 
-        
+    record_list = []
+    # fill the records to be created dict with all matches from table1 with table 2
+    for record_1 in table_1_records:
+        for record_2 in table_2_records:
+            record_dict = {xref_column_name_1:record_1.dictionary[column_name_1], xref_column_name_2:record_2.dictionary[column_name_2]}
+            record_list += [record_dict]
 
+    print(record_list)
+
+    create_records(db=db, table_name=xref_table_name, records=record_list)
 
 # def table_sync(self, table_name):
     
