@@ -2,8 +2,7 @@ import logging
 
 import os
 
-from .table import Table
-from .record import Record
+from .objects import Table, Record
 
 def create_table(db, config_dict, record_dict = {}):
     """

@@ -1,6 +1,6 @@
 import logging
 
-from sqlitemanager.database import Database
+from sqlitemanager.objects import Database, Table, Record
 from sqlitemanager import handler
 
 
