@@ -1,5 +1,7 @@
 import logging
 
+import os
+
 from sqlitemanager.objects import Database, Table, Record
 from sqlitemanager import handler
 
@@ -14,7 +16,11 @@ def print_records(records, description=""):
 
     print()
 
-# connect to new database
+# connect to new database in custom path
+db = Database(path=os.path.join(os.getcwd(),"test_directory"), filename="custompath", extension=("sqlite"))
+db.close()
+
+# connect to new database in current directory
 db = Database(filename="science")
 db.close()
 
