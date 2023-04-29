@@ -10,4 +10,4 @@ class Table(object):
         if self.records != None:
 
             for record in self.records:
-                record.table = self
+                record.table = self.name
