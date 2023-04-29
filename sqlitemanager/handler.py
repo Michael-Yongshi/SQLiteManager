@@ -92,9 +92,6 @@ def create_table(db, config_dict, record_dict = {}):
 
         # create variables text
         query = f"CREATE TABLE IF NOT EXISTS {table_name} (\n{valuetext}\n);"
-
-        logging.warning(f"execute query {query}")
-
         db.execute_query(query)
 
         table_record_dict = record_dict.get(table_name, "Not Found")
@@ -362,11 +359,18 @@ def delete_records(db, table_name, where):
 
     # placeholders = ", ".join("?" for _ in parameters)
 
-    query = f"DELETE FROM {table_name} WHERE {where}"
-
+    query = f"DELETE FROM {table_name} {where}"
     db.execute_query(query)
 
-def get_records(db, table_name, columns=[], where = {}):
+def get_record(db, table_name, columns=[], where={}):
+
+    records = get_records(db, table_name, columns, where)
+    if len(records) == 1:
+        return records[0]
+    else:
+        logging.warning("No or multiple records found, please use 'get_records' when fetching multiple records or provide a unique where clause")
+
+def get_records(db, table_name, columns=[], where={}):
     """
     fetches a selection of records of a table with optionally a selection of the columns and a where clause
 
@@ -409,9 +413,10 @@ def get_records(db, table_name, columns=[], where = {}):
 
     records = []
     for sqlrecord in sqlrecords:
-        record_dict = dict(zip(column_names, sqlrecord))
-        record_object = Record(dictionary=record_dict)
-        records += [record_object]
+        records += [Record.create_from_sqlrecord(table_name=table_name, column_names=column_names, values=sqlrecord)]
+
+    if records == []:
+        logging.warning(f"No records found with Where: {whereline}")
 
     return records
 
@@ -544,12 +549,22 @@ def create_xref_records(db, xref_record_dict):
     # fill the records to be created dict with all matches from table1 with table 2
     for record_1 in table_1_records:
         for record_2 in table_2_records:
-            record_dict = {xref_column_name_1:record_1.dictionary[column_name_1], xref_column_name_2:record_2.dictionary[column_name_2]}
+            record_dict = {xref_column_name_1:record_1.dict[column_name_1], xref_column_name_2:record_2.dict[column_name_2]}
             record_list += [record_dict]
 
     create_records(db=db, table_name=xref_table_name, records=record_list)
 
 def get_xref_table(db, table_name_a, table_name_b):
+    """
+    finds an existing xref table between tables A and B
+
+    returns
+    :xref table name
+    :xref columns 1 and 2
+    :table names 1 and 2
+    :associated columns for tables 1 and 2
+    :inverse that denotes if table name A != table name 1
+    """
 
     table_names_in_db = get_table_names(db=db)
     xref_table_name_asgiven = f"CROSSREF_{table_name_a}_{table_name_b}"
@@ -603,7 +618,7 @@ def get_xref_records(db, source_table, target_table, source_where):
 
     xref_where_values = []
     for record in source_records:
-        xref_where_values += [record.dictionary[source_column_name]]
+        xref_where_values += [record.dict[source_column_name]]
 
     xref_where = {source_xref_column_name: {"operator":"in", "values": xref_where_values}}
     xref_records = get_records(db=db, table_name=xref_table_name, where=xref_where)
@@ -613,7 +628,7 @@ def get_xref_records(db, source_table, target_table, source_where):
     # get records from target table
     target_where_values = []
     for record in xref_records:
-        target_where_values += [record.dictionary[target_xref_column_name]]
+        target_where_values += [record.dict[target_xref_column_name]]
     target_where = {target_column_name: {"operator":"in", "values": target_where_values}}
     target_records = get_records(db=db, table_name=target_table, where=target_where)
 

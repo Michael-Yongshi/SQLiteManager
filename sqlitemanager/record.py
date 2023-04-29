@@ -1,33 +1,34 @@
+from dataclasses import dataclass
 
-class Record(object):
-    def __init__(self, dictionary):
-        super().__init__()
-        """
-        dict: dictionary with key and values
+@dataclass
+class Record:
+    """
+    dict: dictionary with key and values
 
-        record.print() will print the record to the terminal and return the string printed
-        """
+    record.print() will print the record to the terminal and return the string printed
+    """
 
-        self.table = None
-        self.dictionary = dictionary
+    table: str
+    columns: list
+    dict: dict
+
+    def create_from_sqlrecord(table_name, column_names, values):
+
+        record_dict = dict(zip(column_names, values))
+        record_object = Record(table=table_name, columns=column_names, dict=record_dict)
+
+        return record_object
 
     def print(self):
 
         print_string = ""
-        for column_name, value in self.dictionary.items():
+        for column_name, value in self.dict.items():
             print_string += f"{column_name}: {value}, "
         print_string = print_string[:-2]
 
         print(print_string)
         return print_string
 
-    def get_column_names(self):
-
-        column_names = []
-        for key in self.dict:
-            column_names += [key]
-
-        return column_names
 
     # def setvaluepairs(self, column_names):
     #     self.valuepairs = []

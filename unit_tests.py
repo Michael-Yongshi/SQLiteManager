@@ -4,6 +4,16 @@ from sqlitemanager.database import Database
 from sqlitemanager import handler
 
 
+def print_records(records, description=""):
+
+    if description != "":
+        print(description)
+
+    for record in records:
+        record.print()
+
+    print()
+
 # connect to new database
 db = Database(filename="science")
 db.close()
@@ -89,51 +99,66 @@ print(f"table objects in database are {all_tables}")
 # get table object with records
 table_sex = handler.get_tables(db=db, table_selection="sex")
 table_scientist = handler.get_tables(db=db, table_selection="scientist")
-
-# print records of table
-print(table_scientist.records)
+print_records(table_scientist.records)
 
 # get records directly from database
 where = {"sex_id":{
     "operator":"!=",
     "values":1}}
-print("get female scientists")
 records = handler.get_records(db=db, table_name="scientist", columns=[], where=where)
+print_records(records, description="get female scientists")
 
 where = {"age":{
     "operator":">",
     "values":50}}
-print("get scientists over 50 years old")
 records = handler.get_records(db=db, table_name="scientist", columns=[], where=where)
+print_records(records, description="get scientists over 50 years old")
 
 where = {"name":{
     "operator":"IN",
     "values":["Einstein", "Mary Curie"]}}
-print("get scientists named Einstein and Marie Curie")
 records = handler.get_records(db=db, table_name="scientist", columns=[], where=where)
+print_records(records, description="get scientists named Einstein and Marie Curie")
 
 where = {"age":{
     "operator":"IN",
     "values":[68,20]}}
-print("get scientists aged 68 and 20")
 records = handler.get_records(db=db, table_name="scientist", columns=[], where=where)
+print_records(records, description="get scientists aged 68 and 20")
 
 
 
 # update records
 where = {"name":{
     "operator":"=",
-    "values":["Mary Curie"]}}
+    "values":"Mary Curie"}}
 update = {"name":"Marie Curie"}
 handler.update_records(db=db, table_name="scientist", update_dict=update, where=where)
+where = {"name":{
+    "operator":"=",
+    "values":"Marie Curie"}}
+record = handler.get_record(db=db, table_name="scientist", where=where)
+print_records(records=[record], description="Updated Mary to Marie")
+
+
+
+# update record based on edited record object / dataclass
+# handler.compare_and_update_record(db=db, record=record)
+# would be handy
+
 
 
 # delete records
 where = {"name":{
     "operator":"=",
-    "values":["Rosenburg"]}}
+    "values":"Rosenburg"}}
 handler.delete_records(db=db, table_name="scientist", where=where)
-# crossref with a static table
+print(f"Deleted record of Rosenburg")
+handler.get_records(db=db, table_name="scientist", where=where)
+print()
+
+
+
 
 # create a table with records
 table_dict = {"nobelprize": {
