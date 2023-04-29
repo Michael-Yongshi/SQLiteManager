@@ -1,13 +1,9 @@
-class Table(object):
-    def __init__(self, db, name, metadata, records):
-        super().__init__()
+from dataclasses import dataclass
 
-        self.db = db
-        self.name = name
-        self.metadata = metadata
-        self.records = records
+@dataclass
+class Table:
 
-        if self.records != None:
-
-            for record in self.records:
-                record.table = self.name
+    db: object
+    name: str
+    metadata: dict
+    records: list

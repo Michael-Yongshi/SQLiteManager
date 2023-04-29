@@ -72,21 +72,23 @@ handler.create_records(db=db, table_name="scientist",
 
 
 # get all table names
-print(f"table names are {handler.get_table_names(db=db)}")
+print(f"table names are {handler.get_table_names(db=db)}\n")
 
 # get metadata info and check single table fetching
 metadata_string = handler.get_table_metadata(db=db, table_selection="scientist")
 metadata_dict_of_one = handler.get_table_metadata(db=db, table_selection=["scientist"])
 if metadata_string != metadata_dict_of_one["scientist"]:
     logging.warning(f"get_table_metadata does not accept both single table as list or single table as string selection")
-print(f"table metadata is {handler.get_table_metadata(db=db)}")
+print(f"table metadata is {handler.get_table_metadata(db=db)}\n")
 
 # get table column names and check single table fetching
 column_names_string = handler.get_table_column_names(db=db, table_selection="scientist")
 column_names_dict_of_one = handler.get_table_column_names(db=db, table_selection=["scientist"])["scientist"]
 if column_names_string != column_names_dict_of_one:
     logging.warning(f"get_table_column_names does not accept both single table as list or single table as string selection")
-print(handler.get_table_column_names(db=db))
+print(f"{handler.get_table_column_names(db=db)}\n")
+
+
 
 # get tables and check single table fetching
 table_string = handler.get_tables(db=db, table_selection="scientist")
@@ -94,12 +96,17 @@ table_dict_of_one = handler.get_tables(db=db, table_selection=["scientist"])["sc
 if type(table_string) != type(table_dict_of_one):
     logging.warning(f"get_tables does not accept both single table as list or single table as string selection")
 all_tables = handler.get_tables(db=db)
-print(f"table objects in database are {all_tables}")
+print(f"table objects in database are {all_tables}\n")
 
 # get table object with records
 table_sex = handler.get_tables(db=db, table_selection="sex")
+print_records(table_sex.records, description="Table Sex records")
 table_scientist = handler.get_tables(db=db, table_selection="scientist")
-print_records(table_scientist.records)
+print_records(table_scientist.records, description="Table Scientist records")
+
+
+
+
 
 # get records directly from database
 where = {"sex_id":{
