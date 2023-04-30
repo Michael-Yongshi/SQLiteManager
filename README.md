@@ -3,6 +3,9 @@ Use a convenient SQLiteHandler object to manipulate SQLite(3) databases.
 
 ## Version
 
+### 0.7.1
+- added Record.values (list of values)
+
 ### 0.7.0
 - Completely redone, not backwards compatible at all
 - Contains most of the previous functionality
@@ -48,7 +51,40 @@ It prints the paths its using, so watch closely that its called from the correct
 
 ## Tests
 Run test_handler.py in order to test the package.
-For the Gui tests you need PyQt5 and pyqt-darktheme pip packages
+
+# Build
+
+## Pypirc file
+Create a .pypirc file in home directory
+
+```
+[distutils]
+index-servers=
+    pypi
+    test
+
+[test]
+repository = https://test.pypi.org/legacy/
+username = __token__
+password = <PyPI token>
+
+[pypi]
+repository = https://upload.pypi.org/legacy/
+username = __token__
+password = <PyPI token>
+```
+
+## Distributions
+
+```
+python3 -m pip install --upgrade build && python3 -m build
+```
+
+## Upload
+
+```
+python3 -m pip install --upgrade twine && python3 -m twine upload --repository pypi dist/*
+```
 
 ## Licence
 
