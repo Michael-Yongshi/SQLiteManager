@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="sqlitemanager",
-    version="0.6.1",
+    version="0.7.0",
     author="Michael-Yongshi",
     author_email="4registration@outlook.com",
     description="Handler object for easy sqlite manipulation",
@@ -18,5 +18,5 @@ setuptools.setup(
         "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.5',
+    python_requires='>=3.7',
 )
