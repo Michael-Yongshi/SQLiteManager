@@ -153,6 +153,12 @@ where = {"name":{
 record = handler.get_record(db=db, table_name="scientist", where=where)
 print_records(records=[record], description="Updated Mary to Marie")
 
+print("Marie Curie test print record contents")
+print(f"table is {record.table} with columns {record.columns}")
+print(f"values are {record.values}")
+print(f"value dict is {record.dict}")
+print()
+
 
 
 # update record based on edited record object / dataclass
