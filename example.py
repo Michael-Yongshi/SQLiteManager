@@ -34,8 +34,6 @@ db = Database(filename="science")
 
 
 
-
-
 # create a table
 table_dict = {"gender": {
         "id": {"column_type": "int", "primary_key": True, "autonumber": True},
@@ -56,14 +54,30 @@ record_dict = {"sex":[
 handler.create_table(db=db, config_dict=table_dict, record_dict=record_dict)
 
 # create a table with a foreign key to the first table
-table_dict = {"scientist": {
+table_dict = {
+    "scientist": {
         "id": {"column_type": "INTEGER", "primary_key": True, "autonumber": True},
         "name": {"column_type": "str"},
         "age": {"column_type": "#"},
         "sex_id": {"column_type": "INT", "foreign_key": {"sex":"id"}},
         "creation_date": {"column_type": "dt", "column_default":"now"},
+    },
+    "nobelprize": {
+        "id": {"column_type": "number", "primary_key": True, "autonumber": True},
+        "name": {"column_type": "TEXT",},
+        "description": {"column_type": "string",},
     }}
-handler.create_table(db=db, config_dict=table_dict)
+record_dict = {
+    "nobelprize":[
+        {"name":"Peace", "description":"Peace nobel prize"},
+        {"name":"Economy", "description":"Economy nobel prize"},
+        {"name":"Physics", "description":"Physics nobel prize"},
+        {"name":"Sociology", "description":"Sociology nobel prize"},
+    ]}
+handler.create_table(db=db, config_dict=table_dict, record_dict=record_dict)
+
+
+
 
 # test deleting of table
 handler.delete_table(db=db, table_name="gender")
@@ -188,21 +202,6 @@ handler.get_records(db=db, table_name="scientist", where=where)
 print()
 
 
-
-
-# create a table with records
-table_dict = {"nobelprize": {
-        "id": {"column_type": "number", "primary_key": True, "autonumber": True},
-        "name": {"column_type": "TEXT",},
-        "description": {"column_type": "string",},
-}}
-record_dict = {"nobelprize":[
-        {"name":"Peace", "description":"Peace nobel prize"},
-        {"name":"Economy", "description":"Economy nobel prize"},
-        {"name":"Physics", "description":"Physics nobel prize"},
-        {"name":"Sociology", "description":"Sociology nobel prize"},
-        ]}
-handler.create_table(db=db, config_dict=table_dict, record_dict=record_dict)
 
 
 # adding a crossref table
