@@ -3,17 +3,22 @@ Use a convenient SQLiteHandler object to manipulate SQLite(3) databases.
 
 ## Version
 
-### 0.7.1
+### 0.7
+0.7.2
+- added get_latest_record function
+
+0.7.1
 - added Record.values (list of values)
 
-### 0.7.0
+0.7.0
 - Completely redone, not backwards compatible at all
 - Contains most of the previous functionality
 
-### 0.6.1
+### 0.6
+0.6.1
 - extra logging for printing path
 
-### 0.6.0
+0.6.0
 - Extension type can be given to the handler to discern between .sqlite and .sqlite3
 - changed many functions to depend on the location variables of the handler class (path, filename, extension)
 make sure the extension variable does not miss the dot!

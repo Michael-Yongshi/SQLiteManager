@@ -17,8 +17,13 @@ def print_records(records, description=""):
     print()
 
 # connect to new database in custom path
-db = Database(path=os.path.join(os.getcwd(),"test_directory"), filename="custompath", extension=("sqlite"))
-db.close()
+path = os.path.join(os.getcwd(),"test_directory")
+db = Database(path=path, filename="custompath", extension=("sqlite"))
+db.delete()
+
+# enforce a clean database for testing
+db = Database(filename="science")
+db.delete()
 
 # connect to new database in current directory
 db = Database(filename="science")
@@ -26,6 +31,7 @@ db.close()
 
 # connect to existing database
 db = Database(filename="science")
+
 
 
 
@@ -114,7 +120,7 @@ print_records(table_scientist.records, description="Table Scientist records")
 
 
 
-# get records directly from database
+# get records directly from database with where examples
 where = {"sex_id":{
     "operator":"!=",
     "values":1}}
@@ -138,6 +144,11 @@ where = {"age":{
     "values":[68,20]}}
 records = handler.get_records(db=db, table_name="scientist", columns=[], where=where)
 print_records(records, description="get scientists aged 68 and 20")
+
+# get max row (latest record)
+record = handler.get_latest_record(db=db, table_name="scientist", column_name="id")
+print(f"Getting the latest record in a table")
+print(f"{record}\n")
 
 
 

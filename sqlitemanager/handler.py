@@ -369,6 +369,23 @@ def get_record(db, table_name, columns=[], where={}):
     else:
         logging.warning("No or multiple records found, please use 'get_records' when fetching multiple records or provide a unique where clause")
 
+def get_latest_record(db, table_name, column_name):
+
+    query = f"SELECT MAX({column_name}) FROM {table_name}"
+    cursor = db.execute_query(query)
+    result = cursor.fetchone()
+
+    # if no record is found return 0
+    if result == []:
+        return None
+
+    # else return the found value
+    else:
+        where = {column_name:{
+        "operator":"=",
+        "values":result[0]}}
+        return get_record(db=db, table_name=table_name, where=where)
+
 def get_records(db, table_name, columns=[], where={}):
     """
     fetches a selection of records of a table with optionally a selection of the columns and a where clause
@@ -681,10 +698,6 @@ def get_xref_records(db, source_table, target_table, source_where):
 
 #     return records
 
-# def table_max_row(self, table_name):
-#     lastrow = self.database.get_max_row(table_name)
-#     return lastrow
-
 
 # def crossref_get(self, table_name1, table_name2):
 #     """
@@ -969,22 +982,3 @@ def get_xref_records(db, source_table, target_table, source_where):
 
 
 
-# def get_max_row(self, table_name):
-
-#     cursor = self.execute_query(f"SELECT COUNT(id) FROM {table_name}")
-#     lastrow = cursor.fetchall()[0][0]
-#     if lastrow == None:
-#         lastrow = 0
-
-#     return lastrow
-
-# def get_max_columncontent(self, table, column):
-
-        # query = f"SELECT MAX({column}) FROM {table}"
-
-        # cursor = self.execute_query(query)
-        # max_columncontent = cursor.fetchall()
-        # if max_columncontent[0][0] == None:
-        #     max_columncontent = [(0,)]
-
-        # return max_columncontent[0][0]
