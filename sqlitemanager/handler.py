@@ -348,6 +348,43 @@ def update_records(db, table_name, update_dict, where):
     # query = f"UPDATE {table_name} SET\n{set_placeholders}\nWHERE\n{where_placeholders}\n;"
     # self.execute_parameterised_query(query, parameters)
 
+def update_record_by_difference(db, record_object, unique_column=""):
+    """
+    updates a record based on a changed Record object instead of manually creating an update call.
+    The method only looks at the dict of the record
+
+    This allows for changes external to the database and only update all changes in one go once you are done
+
+    returns the update_dict with the changes to check what has been changed in the database
+    """
+
+    table_name = record_object.table
+    unique_column = "id" if unique_column == "" else unique_column
+
+    # create where to fetch a unique record
+    where = {unique_column:{
+    "operator":"=",
+    "values":record_object.dict[unique_column]}}
+
+    # fetch the original record, if nothing fetched, return (where is probably causing no or multiple hits)
+    original_record = get_record(db=db, table_name=table_name, where=where)
+    if original_record == None:
+        return
+
+    update_dict = {}
+    for column in original_record.dict:
+        new_value = record_object.dict[column]
+        if original_record.dict[column] != new_value:
+            update_dict.update({column:new_value})
+
+    if update_dict == {}:
+        logging.info(f"New record is the same as the original, no update required")
+        return
+
+    update_records(db=db, table_name=table_name, update_dict=update_dict, where=where)
+
+    return update_dict
+
 def delete_records(db, table_name, where):
 
     where = resolve_where(db=db, where=where, parameterised=False)

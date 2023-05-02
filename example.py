@@ -166,7 +166,16 @@ print(f"{record}\n")
 
 
 
-# update records
+# update record through Record object with changes outside the database
+where = {"name":{
+    "operator":"=",
+    "values":"Einstein"}}
+record = handler.get_record(db=db, table_name="scientist", where=where)
+record.dict.update({"age": 76})
+handler.update_record_by_difference(db=db, record_object=record)
+print_records(records=[record], description="Updated Einstein to age 76 with object")
+
+# update records directly
 where = {"name":{
     "operator":"=",
     "values":"Mary Curie"}}
@@ -178,6 +187,11 @@ where = {"name":{
 record = handler.get_record(db=db, table_name="scientist", where=where)
 print_records(records=[record], description="Updated Mary to Marie")
 
+
+
+
+
+# printing records
 print("Marie Curie test print record contents")
 print(f"table is {record.table} with columns {record.columns}")
 print(f"values are {record.values}")
