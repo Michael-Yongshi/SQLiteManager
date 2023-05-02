@@ -3,6 +3,9 @@ Use a convenient SQLiteHandler object to manipulate SQLite(3) databases.
 
 ## Version
 
+### unreleased
+- added update method based on Record object
+
 ### 0.7
 0.7.2
 - added get_latest_record function
