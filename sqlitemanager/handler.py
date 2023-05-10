@@ -1,21 +1,28 @@
 import logging
 
-import os
-
 from .objects import Table, Record
 
-def create_table(db, config_dict, record_dict = {}):
+
+def create_table(db, config_dict, record_dict={}):
     """
-    Creates a table in the database based on a configuration dictionary (config_dict)
-    
-    the config dict is a nested dict where the table_name is the first key with as value a dict with the column names as keys
-    these columns each have a dict containing the parameters of the columns
+    Creates a table in the database based on a
+    configuration dictionary (config_dict)
+
+    the config dict is a nested dict where the
+    table_name is the first key with as value a dict
+    with the column names as keys. These columns
+    each have a dict containing the parameters of the columns
 
     column_type is the only mandatory parameter
-    The function will convert automatically the column types to the right SQL query parameters for certain keywords (not caps sensitive)
-    and can transform these common type terms, like int, integer, number, str, string, txt, text, date, time, dt, datetime
+    The function will convert automatically the
+    column types to the right SQL query parameters
+    for certain keywords (not caps sensitive)
+    and can transform these common type terms,
+    like int, integer, number, str, string, txt,
+    text, date, time, dt, datetime
 
-    the config dict can be filled with some optional parameters when you want them to be included
+    the config dict can be filled with some optional
+    parameters when you want them to be included
 
     primary_key, autonumber and not_null are simply set to true, like
     primary_key: True
@@ -25,16 +32,19 @@ def create_table(db, config_dict, record_dict = {}):
     Defaults need data given
     column_default: <value>
 
-    Foreign keys can be given by setting the foreign_key with value a dict of the table and column it should point to.
+    Foreign keys can be given by setting the foreign_key with value
+    a dict of the table and column it should point to.
     foreign_key:{<table>:<column>}
 
-    Optionally you can add already records for tables by adding a list of record dicts to be added immediately after creating the table
-    The record dicts are just a dict where column name is the key and the data is the value
+    Optionally you can add already records for tables by adding a list
+    of record dicts to be added immediately after creating the table
+    The record dicts are just a dict where column name is the key and
+    the data is the value
     {os_table:[
             {"name":"Fedora","age":300},
             {"name":"Ubuntu","age":50}
     }
-    
+
     """
 
     valuetext = []
@@ -53,14 +63,14 @@ def create_table(db, config_dict, record_dict = {}):
             # fetch column type
             column_type_transform = column_dict["column_type"].upper()
 
-            if column_type_transform in("INT", "INTEGER", "NUMBER", "#"):
+            if column_type_transform in ("INT", "INTEGER", "NUMBER", "#"):
                 column_type = "INTEGER"
-            elif column_type_transform in("STR", "STRING", "TXT", "TEXT"):
+            elif column_type_transform in ("STR", "STRING", "TXT", "TEXT"):
                 column_type = "TEXT"
-            elif column_type_transform in("DATE", "TIME", "DT", "DATETIME"):
+            elif column_type_transform in ("DATE", "TIME", "DT", "DATETIME"):
                 column_type = "DATE"
             else:
-                # otherwise keep exactly the same, sure the caller knows what he is doing
+                # otherwise keep exactly the same
                 column_type = column_dict["column_type"]
 
             column_text += f" {column_type}"
@@ -95,7 +105,12 @@ def create_table(db, config_dict, record_dict = {}):
 
         table_record_dict = record_dict.get(table_name, "Not Found")
         if table_record_dict != "Not Found":
-            create_records(db = db, table_name = table_name, records = table_record_dict)
+            create_records(
+                db=db,
+                table_name=table_name,
+                records=table_record_dict,
+                )
+
 
 def delete_table(db, table_name):
     """
@@ -106,6 +121,7 @@ def delete_table(db, table_name):
     db.execute_query(query)
 
     logging.warning(f"table {table_name} deleted")
+
 
 def get_table_names(db):
     """
@@ -125,39 +141,42 @@ def get_table_names(db):
 
     return table_names
 
+
 def get_table_metadata(db, table_selection=[]):
     """
-    Fetches information from the database about all or a selection of tables within the database
-    It fetches columns with ordering and types and returns a dict of tables, columns and this metadata.
+    Fetches information from the database about all or a selection of tables
+    within the database. It fetches columns with ordering and types and returns
+    a dict of tables, columns and this metadata.
 
     {'scientist': {
-        'id': 
-            {'order': 0, 'type': 'INTEGER'}, 
-        'name': 
-            {'order': 1, 'type': 'TEXT'}, 
-        'age': 
-            {'order': 2, 'type': 'INTEGER'}, 
-        'sex_id': 
+        'id':
+            {'order': 0, 'type': 'INTEGER'},
+        'name':
+            {'order': 1, 'type': 'TEXT'},
+        'age':
+            {'order': 2, 'type': 'INTEGER'},
+        'sex_id':
             {'order': 3, 'type': 'INTEGER'}
         }
     }
-    
-    if only a single table is requested as string, the result will just be that table dicts contents
+
+    if only a single table is requested as string,
+    the result will just be that table dicts contents
     {
-    'id': 
-        {'order': 0, 'type': 'INTEGER'}, 
-    'name': 
-        {'order': 1, 'type': 'TEXT'}, 
-    'age': 
-        {'order': 2, 'type': 'INTEGER'}, 
-    'sex_id': 
+    'id':
+        {'order': 0, 'type': 'INTEGER'},
+    'name':
+        {'order': 1, 'type': 'TEXT'},
+    'age':
+        {'order': 2, 'type': 'INTEGER'},
+    'sex_id':
         {'order': 3, 'type': 'INTEGER'}
     }
     """
-    
+
     if table_selection == []:
         table_names = get_table_names(db)
-    elif isinstance(table_selection,str):
+    elif isinstance(table_selection, str):
         table_names = [table_selection]
     else:
         table_names = table_selection
@@ -176,32 +195,38 @@ def get_table_metadata(db, table_selection=[]):
             column_type = datapoint[2]
 
             column_dict = {
-                    "order":column_order,
-                    "type":column_type
+                    "order": column_order,
+                    "type": column_type
                 }
-            table_dict.update({column_name:column_dict})
+            table_dict.update({column_name: column_dict})
 
         tables_dict.update({table_name: table_dict})
 
         logging.info(f"metadata of table {table_name} is {tables_dict}")
 
-    if isinstance(table_selection,str):
+    if isinstance(table_selection, str):
         for key in tables_dict:
             return tables_dict[key]
     else:
         return tables_dict
 
+
 def get_table_column_names(db, table_selection=[]):
     """
     Fetches the column names of one or multiple tables.
 
-    if table selection is a single table as string, it will return solely a list of column names within this table
-    if the table selection is in list form, even if its a single table, it will return a dict of tables and their columns as value
-    If its empty a dict containing all tables and their column names will be given
+    if table selection is a single table as string,
+    it will return solely a list of column names within this table
+
+    if the table selection is in list form, even if its a single table,
+    it will return a dict of tables and their columns as value
+
+    If its empty a dict containing all tables and
+    their column names will be given
     """
 
     table_metadata = get_table_metadata(db, table_selection=table_selection)
-    if isinstance(table_selection,str):
+    if isinstance(table_selection, str):
         column_names = []
         for column_name in table_metadata:
             column_names += [column_name]
@@ -213,21 +238,23 @@ def get_table_column_names(db, table_selection=[]):
             column_names = []
             for column_name in table_metadata[table_name]:
                 column_names += [column_name]
-            table_column_dict.update({table_name:column_names})
+            table_column_dict.update({table_name: column_names})
 
         return table_column_dict
+
 
 def get_tables(db, table_selection=[]):
     """
     fetches table objects and returned in a dict
     {table_name: table_object, table_name2: tableo_bject2}
 
-    if only a single table is requested, the result will just be that table object
+    if only a single table is requested,
+    the result will just be that table object
     """
 
     if table_selection == []:
         table_names = get_table_names(db)
-    elif isinstance(table_selection,str):
+    elif isinstance(table_selection, str):
         table_names = [table_selection]
     else:
         table_names = table_selection
@@ -243,20 +270,21 @@ def get_tables(db, table_selection=[]):
         table_records = get_records(db, table_name=table_name)
 
         table_object = Table(
-            db = db,
-            name = table_name, 
-            metadata = table_metadata,
-            records = table_records,
+            db=db,
+            name=table_name, 
+            metadata=table_metadata,
+            records=table_records,
             )
 
         # create table object and add to tables dict
-        tables_dict.update({table_name:table_object})
+        tables_dict.update({table_name: table_object})
 
-    if isinstance(table_selection,str):
+    if isinstance(table_selection, str):
         for key in tables_dict:
             return tables_dict[key]
     else:
         return tables_dict
+
 
 def create_records(db, table_name, records):
     """
@@ -276,8 +304,11 @@ def create_records(db, table_name, records):
         for column_name in record:
             column_names += [column_name]
 
-            # string value needs to have added single quotes for the query to denote its a string
-            value = f"'{record[column_name]}'" if isinstance(record[column_name], str) else record[column_name]
+            # add single quotes if its a string
+            if isinstance(record[column_name], str):
+                value = f"'{record[column_name]}'"
+            else:
+                record[column_name]
 
             values += [f"{value}"]
 
@@ -287,6 +318,7 @@ def create_records(db, table_name, records):
         query = f"INSERT INTO {table_name}\n({columns_text})\nVALUES\n({values_text})\n;"
 
         db.execute_query(query)
+
 
 def update_records(db, table_name, update_dict, where):
     """
@@ -324,66 +356,56 @@ def update_records(db, table_name, update_dict, where):
     query = f"UPDATE {table_name} \nSET {set_text} {where_text}\n;"
     db.execute_query(query)
 
-
     # parameters = tuple()
 
-    # # create set_placeholders
-    # set_placeholders = ""
-    # for valuepair in valuepairs:
-    #     parameters += tuple([valuepair[1]])
-    #     set_placeholders += valuepair[0] + " = ?, "
-    # set_placeholders = set_placeholders[:-2]
-    # # print(f"set_placeholders = {set_placeholders}")
-    # # print(f"parameters = {parameters}")
-
-    # # create where_placeholders
-    # where_placeholders = ""
-    # for statement in where:
-    #     parameters += tuple(statement[1])
-    #     where_placeholders += statement[0] + " = ? AND "
-    # where_placeholders = where_placeholders[:-5]
-    # # print(f"where_placeholders = {where_placeholders}")
-    # # print(f"parameters = {parameters}")
-
-    # query = f"UPDATE {table_name} SET\n{set_placeholders}\nWHERE\n{where_placeholders}\n;"
-    # self.execute_parameterised_query(query, parameters)
 
 def update_record_by_difference(db, record_object, unique_column=""):
     """
-    updates a record based on a changed Record object instead of manually creating an update call.
+    updates a record based on a changed Record object
+    instead of manually creating an update call.
     The method only looks at the dict of the record
 
-    This allows for changes external to the database and only update all changes in one go once you are done
+    This allows for changes external to the database
+    and only update all changes in one go once you are done
 
-    returns the update_dict with the changes to check what has been changed in the database
+    returns the update_dict with the changes
+    to check what has been changed in the database
     """
 
     table_name = record_object.table
     unique_column = "id" if unique_column == "" else unique_column
 
     # create where to fetch a unique record
-    where = {unique_column:{
-    "operator":"=",
-    "values":record_object.dict[unique_column]}}
+    where = {unique_column: {
+        "operator": "=",
+        "values": record_object.dict[unique_column]
+        }}
 
     # fetch the original record, if nothing fetched, return (where is probably causing no or multiple hits)
     original_record = get_record(db=db, table_name=table_name, where=where)
-    if original_record == None:
+    if original_record is None:
         return
 
     update_dict = {}
     for column in original_record.dict:
         new_value = record_object.dict[column]
         if original_record.dict[column] != new_value:
-            update_dict.update({column:new_value})
+            update_dict.update({column: new_value})
 
     if update_dict == {}:
-        logging.info(f"New record is the same as the original, no update required")
+        logging.info(
+            "New record is the same as the original, no update required")
         return
 
-    update_records(db=db, table_name=table_name, update_dict=update_dict, where=where)
+    update_records(
+        db=db,
+        table_name=table_name,
+        update_dict=update_dict,
+        where=where,
+        )
 
     return update_dict
+
 
 def delete_records(db, table_name, where):
 
@@ -398,13 +420,18 @@ def delete_records(db, table_name, where):
     query = f"DELETE FROM {table_name} {where}"
     db.execute_query(query)
 
+
 def get_record(db, table_name, columns=[], where={}):
 
     records = get_records(db, table_name, columns, where)
     if len(records) == 1:
         return records[0]
     else:
-        logging.warning("No or multiple records found, please use 'get_records' when fetching multiple records or provide a unique where clause")
+        logging.warning(
+            "No or multiple records found, please use 'get_records'"
+            "when fetching multiple records or provide a unique where clause"
+        )
+
 
 def get_latest_record(db, table_name, column_name):
 
@@ -418,16 +445,20 @@ def get_latest_record(db, table_name, column_name):
 
     # else return the found value
     else:
-        where = {column_name:{
-        "operator":"=",
-        "values":result[0]}}
+        where = {column_name: {
+            "operator": "=",
+            "values": result[0]
+        }}
         return get_record(db=db, table_name=table_name, where=where)
+
 
 def get_records(db, table_name, columns=[], where={}):
     """
-    fetches a selection of records of a table with optionally a selection of the columns and a where clause
+    fetches a selection of records of a table
+    with optionally a selection of the columns and a where clause
 
-    column selection is just an array of the column names or a string for just a single column
+    column selection is just an array of the column names or a string
+    for just a single column
 
     where can be collected as {
         column name: {"operator":"==", values:""}, 
@@ -444,7 +475,7 @@ def get_records(db, table_name, columns=[], where={}):
     }
     """
 
-    query = f"SELECT "
+    query = "SELECT "
 
     if columns == []:
         column_line = "*"
@@ -466,14 +497,19 @@ def get_records(db, table_name, columns=[], where={}):
 
     records = []
     for sqlrecord in sqlrecords:
-        records += [Record.create_from_sqlrecord(table_name=table_name, column_names=column_names, values=sqlrecord)]
+        records += [Record.create_from_sqlrecord(
+            table_name=table_name,
+            column_names=column_names,
+            values=sqlrecord
+            )]
 
     if records == []:
         logging.warning(f"No records found with Where: {whereline}")
 
     return records
 
-def resolve_where(db, where, parameterised = False):
+
+def resolve_where(db, where, parameterised=False):
     
     if parameterised:
         # # TODO, parameters have to be added seperately for a parameterised query
@@ -497,7 +533,6 @@ def resolve_where(db, where, parameterised = False):
         pass
 
     else:
-    
         whereline = ""
         if where != {}:
             whereline += "WHERE "
@@ -506,10 +541,10 @@ def resolve_where(db, where, parameterised = False):
             for column_name in where:
                 where_dict = where[column_name]
                 operator = where_dict["operator"]
-                
+
                 values = where_dict["values"]
                 if isinstance(values, list):
-                    if isinstance(values[0],str):
+                    if isinstance(values[0], str):
                         values = "', '".join(values)
                         values = f"('{values}')"
                     else:
@@ -517,19 +552,21 @@ def resolve_where(db, where, parameterised = False):
                         values = map(str, values)
                         values = ", ".join(values)
                         values = f"({values})"
-                elif isinstance(values,str):
+                elif isinstance(values, str):
                     values = f"'{values}'"
 
                 wherelist += [f"{column_name} {operator} {values}"]
-            
+
             whereline += " AND ".join(wherelist)
 
         return whereline
 
+
 def create_xref_table(db, xref_dict, records=[]):
     """
     Creates a crossreference table for tables with given table names.
-    Next to the columns that contain the foreign keys, a column for a description is made for additional info.
+    Next to the columns that contain the foreign keys, a column for a
+    description is made for additional info.
     """
 
     # get desired table names
@@ -546,8 +583,8 @@ def create_xref_table(db, xref_dict, records=[]):
 
     # set up create table config dict.
     config_dict = {xref_table_name: {
-            xref_column_name_1: {"column_type": "INTEGER", "foreign_key": {table_name_1:column_name_1}},
-            xref_column_name_2: {"column_type": "INTEGER", "foreign_key": {table_name_2:column_name_2}},
+            xref_column_name_1: {"column_type": "INTEGER", "foreign_key": {table_name_1: column_name_1}},
+            xref_column_name_2: {"column_type": "INTEGER", "foreign_key": {table_name_2: column_name_2}},
     }}
 
     create_table(db=db, config_dict=config_dict)
@@ -555,18 +592,21 @@ def create_xref_table(db, xref_dict, records=[]):
     # if records != []:
     #     create_records(db=db, table_name=xref_table_name, records=records)
 
+
 def create_xref_records(db, xref_record_dict):
     """
-    will create a record in the crossreference table that satisfies the 'where' clause. 
-    if the where clause contains the '=' or 'in' operator and the columns of the actual crossreference table
-    the crossreference will be tried immediately without first looking up the rows 
+    will create a record in the crossreference table that satisfies the
+    'where' clause. if the where clause contains the '=' or 'in' operator
+    and the columns of the actual crossreference table, the crossreference
+    will be tried immediately without first looking up the rows
     (should not be necessary so saves on performance)
 
-    if this is not satisfied, it will first look up the necessary records satisfying the condition
-    only then try to create a crossreference using those records used crossreference columns
+    if this is not satisfied, it will first look up the necessary records
+    satisfying the condition only then try to create a crossreference
+    using those records used crossreference columns
 
     The following dict format is accepted to determine the crossreference
-    
+
     xref_record_dict = {
         "table_name1: {
             "id":{
@@ -602,10 +642,14 @@ def create_xref_records(db, xref_record_dict):
     # fill the records to be created dict with all matches from table1 with table 2
     for record_1 in table_1_records:
         for record_2 in table_2_records:
-            record_dict = {xref_column_name_1:record_1.dict[column_name_1], xref_column_name_2:record_2.dict[column_name_2]}
+            record_dict = {
+                xref_column_name_1: record_1.dict[column_name_1],
+                xref_column_name_2: record_2.dict[column_name_2],
+                }
             record_list += [record_dict]
 
     create_records(db=db, table_name=xref_table_name, records=record_list)
+
 
 def get_xref_table(db, table_name_a, table_name_b):
     """
@@ -643,28 +687,31 @@ def get_xref_table(db, table_name_a, table_name_b):
     xref_column_name_1 = column_names[0]
     xref_column_name_2 = column_names[1]
 
-    # the column names of the crossreference is in the form "tablename_columnname", so below results in the actual column names they reference to
+    # the column names of the crossreference is in the form "tablename_columnname"
+    # so below results in the actual column names they reference to
     column_name_1 = xref_column_name_1.split("_")[1]
     column_name_2 = xref_column_name_2.split("_")[1]
 
     return xref_table_name, xref_column_name_1, xref_column_name_2, table_name_1, table_name_2, column_name_1, column_name_2, inverse
 
+
 def get_xref_records(db, source_table, target_table, source_where):
     """
-    used to get records from a second table that are related to the selection of records of the first table
-    
+    used to get records from a second table
+    that are related to the selection of records of the first table
+
     source_table where dict
     target_table name
-    
+
     """
 
     # get cross reference table between source and target
     xref_table_name, xref_column_name_1, xref_column_name_2, table_name_1, table_name_2, column_name_1, column_name_2, inverse = get_xref_table(db=db, table_name_a=source_table, table_name_b=target_table)
 
-    source_column_name = column_name_1 if inverse == False else column_name_2
-    target_column_name = column_name_2 if inverse == False else column_name_1
-    source_xref_column_name = xref_column_name_1 if inverse == False else xref_column_name_2
-    target_xref_column_name = xref_column_name_2 if inverse == False else xref_column_name_1
+    source_column_name = column_name_1 if inverse is False else column_name_2
+    target_column_name = column_name_2 if inverse is False else column_name_1
+    source_xref_column_name = xref_column_name_1 if inverse is False else xref_column_name_2
+    target_xref_column_name = xref_column_name_2 if inverse is False else xref_column_name_1
 
     # get relevant records from source table
     source_records = get_records(db=db, table_name=source_table, columns=source_column_name, where=source_where)
@@ -673,20 +720,19 @@ def get_xref_records(db, source_table, target_table, source_where):
     for record in source_records:
         xref_where_values += [record.dict[source_column_name]]
 
-    xref_where = {source_xref_column_name: {"operator":"in", "values": xref_where_values}}
+    xref_where = {source_xref_column_name: {"operator": "in", "values": xref_where_values}}
     xref_records = get_records(db=db, table_name=xref_table_name, where=xref_where)
-    # for record in xref_records:
-    #     record.print()
 
     # get records from target table
     target_where_values = []
     for record in xref_records:
         target_where_values += [record.dict[target_xref_column_name]]
-    target_where = {target_column_name: {"operator":"in", "values": target_where_values}}
+    target_where = {target_column_name: {"operator": "in", "values": target_where_values}}
     target_records = get_records(db=db, table_name=target_table, where=target_where)
 
     for record in target_records:
         record.print()
+
 
 # def table_get_foreign_table(self, table_name, column):
 #     """
