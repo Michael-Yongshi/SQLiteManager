@@ -308,7 +308,7 @@ def create_records(db, table_name, records):
             if isinstance(record[column_name], str):
                 value = f"'{record[column_name]}'"
             else:
-                record[column_name]
+                value = record[column_name]
 
             values += [f"{value}"]
 
@@ -629,7 +629,15 @@ def create_xref_records(db, xref_record_dict):
     table_name_b = table_names[1]
 
     # check correct xref table name and set the xref_dict parts to the correct table 1 and table 2 so you always end up with the same order
-    xref_table_name, xref_column_name_1, xref_column_name_2, table_name_1, table_name_2, column_name_1, column_name_2, inverse = get_xref_table(db=db, table_name_a=table_name_a, table_name_b=table_name_b)
+    xref_dict = get_xref_table(db=db, table_name_a=table_name_a, table_name_b=table_name_b)
+    xref_table_name = xref_dict["xref_table_name"]
+    xref_column_name_1 = xref_dict["xref_column_name_1"]
+    xref_column_name_2 = xref_dict["xref_column_name_2"]
+    table_name_1 = xref_dict["table_name_1"]
+    table_name_2 = xref_dict["table_name_2"]
+    column_name_1 = xref_dict["column_name_1"]
+    column_name_2 = xref_dict["column_name_2"]
+    inverse = xref_dict["inverse"]
 
     table_1_where_dict = xref_record_dict[table_name_1]
     table_2_where_dict = xref_record_dict[table_name_2]
@@ -692,7 +700,16 @@ def get_xref_table(db, table_name_a, table_name_b):
     column_name_1 = xref_column_name_1.split("_")[1]
     column_name_2 = xref_column_name_2.split("_")[1]
 
-    return xref_table_name, xref_column_name_1, xref_column_name_2, table_name_1, table_name_2, column_name_1, column_name_2, inverse
+    return {
+        "xref_table_name": xref_table_name,
+        "xref_column_name_1": xref_column_name_1,
+        "xref_column_name_2": xref_column_name_2,
+        "table_name_1": table_name_1,
+        "table_name_2": table_name_2,
+        "column_name_1": column_name_1,
+        "column_name_2": column_name_2,
+        "inverse": inverse,
+    }
 
 
 def get_xref_records(db, source_table, target_table, source_where):
@@ -706,7 +723,15 @@ def get_xref_records(db, source_table, target_table, source_where):
     """
 
     # get cross reference table between source and target
-    xref_table_name, xref_column_name_1, xref_column_name_2, table_name_1, table_name_2, column_name_1, column_name_2, inverse = get_xref_table(db=db, table_name_a=source_table, table_name_b=target_table)
+    xref_dict = get_xref_table(db=db, table_name_a=source_table, table_name_b=target_table)
+    xref_table_name = xref_dict["xref_table_name"]
+    xref_column_name_1 = xref_dict["xref_column_name_1"]
+    xref_column_name_2 = xref_dict["xref_column_name_2"]
+    table_name_1 = xref_dict["table_name_1"]
+    table_name_2 = xref_dict["table_name_2"]
+    column_name_1 = xref_dict["column_name_1"]
+    column_name_2 = xref_dict["column_name_2"]
+    inverse = xref_dict["inverse"]
 
     source_column_name = column_name_1 if inverse is False else column_name_2
     target_column_name = column_name_2 if inverse is False else column_name_1
