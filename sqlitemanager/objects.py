@@ -10,7 +10,7 @@ import sqlite3
 from sqlite3 import Error
 
 class Database(object):
-    def __init__(self, path="", filename="", extension="", load_all=False):
+    def __init__(self, path="", filename="", extension=""):
 
         self.complete_path, self.path, self.filename, self.extension = self.determine_complete_path(path, filename, extension)
 
@@ -30,10 +30,6 @@ class Database(object):
         except Error as e:
 
             logging.warning(f"The error '{e}' occurred")
-
-        # pull all sql tables and records
-        if load_all == True:
-            self.load_tables()
 
     def determine_complete_path(self, path_given, filename_given, extension_given):
         """
