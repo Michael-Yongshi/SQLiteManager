@@ -9,6 +9,7 @@ Use a convenient SQLiteHandler object to manipulate SQLite(3) databases.
 ### 0.7
 0.7.2
 - added get_latest_record function
+- cleanup of code
 
 0.7.1
 - added Record.values (list of values)
