@@ -426,11 +426,10 @@ def get_record(db, table_name, columns=[], where={}):
     records = get_records(db, table_name, columns, where)
     if len(records) == 1:
         return records[0]
+    elif len(records) > 1:
+        logging.warning("Multiple records found, please use 'get_records'")
     else:
-        logging.warning(
-            "No or multiple records found, please use 'get_records'"
-            "when fetching multiple records or provide a unique where clause"
-        )
+        logging.warning("No records found, please provide a valid where clause")
 
 
 def get_latest_record(db, table_name, column_name):
